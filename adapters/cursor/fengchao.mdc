@@ -1,0 +1,26 @@
+---
+description: 实际开发完成后维护 FengChaoSkills 任务记录、changelog 和渐进式业务上下文；讨论、Plan、只读分析不触发。
+globs:
+alwaysApply: true
+---
+
+# FengChaoSkills
+
+当且仅当本次会话完成了真实开发交付，最终回复前必须执行 FengChaoSkills 维护流程。
+
+不触发：普通讨论、Plan 模式、方案评审、只读分析、代码讲解、未修改项目文件的排查。
+
+新会话先读取 `fengwang/FENGWANG.md` 并按 `fengwang/memory-map.md` 路由到最小必要上下文。
+
+项目级 FengChao skill 位于 `.cursor/skills/fengchao-business-memory/SKILL.md`。当 FengChaoSkills 适用时，读取该文件并按其中规则执行。
+
+Plan 模式产出最终计划后只维护 `plan-records/`；长期有价值的用户业务解释只维护 `conversation-records/`；两者默认不直接更新 `business-context/`。
+
+触发后维护：
+
+- `task-records/` 不可变任务记录
+- `changelog/` 单次变更记录和索引
+- 命中稳定业务变化时更新 `business-context/`
+- 更新 `fengwang/memory-map.md`
+
+默认只保存萃取摘要，不保存完整对话。

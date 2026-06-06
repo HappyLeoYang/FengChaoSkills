@@ -1,0 +1,5 @@
+interface:
+  display_name: "FengChao Business Memory"
+  short_description: "Route and maintain project business memory"
+  brand_color: "#D97706"
+  default_prompt: "Use $fengchao-business-memory to route project memory with FengWang or maintain plan, conversation, task, changelog, and business context records."

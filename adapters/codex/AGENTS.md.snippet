@@ -1,0 +1,27 @@
+<!-- FENGCHAO-BUSINESS-MEMORY:START -->
+## FengChaoSkills 业务记忆规则
+
+仅在实际开发任务完成后触发 FengChaoSkills：代码、配置、数据库脚本、接口、文档产物或其他项目文件发生真实交付变更时才维护。
+
+新会话先读取 `fengwang/FENGWANG.md`，再根据 `fengwang/memory-map.md` 定位最小必要上下文。
+
+本项目内置 FengChaoSkills，项目级 skill 路径如下：
+
+- OpenCode：`.opencode/skills/fengchao-business-memory/SKILL.md`
+- Claude Code：`.claude/skills/fengchao-business-memory/SKILL.md`
+- Cursor：`.cursor/skills/fengchao-business-memory/SKILL.md`
+- Codex：`.codex/skills/fengchao-business-memory/SKILL.md`
+- Codex/Agents 兼容：`.agents/skills/fengchao-business-memory/SKILL.md`
+
+不得在普通讨论、Plan 模式、只读分析、代码讲解、需求头脑风暴、未落地方案评审时维护 task-records/changelog。Plan 模式产出最终计划后只维护 `plan-records/`；有长期价值的用户业务解释只维护 `conversation-records/`。
+
+开发完成后、最终汇报前必须执行：
+
+1. 从本轮对话萃取用户真实业务诉求、最终方案、关键决策、实现证据和验证结果。
+2. 生成 `task-records/YYYY-MM-DD_NNN_标题.md` 不可变任务记录。
+3. 生成 `changelog/YYYY-MM-DD_NNN_标题.md`。
+4. 更新 `task-records/TASK-INDEX.md` 与 `changelog/CHANGELOG-INDEX.md`。
+5. 如果业务规则、接口契约、数据结构、权限、状态机或核心流程发生稳定变化，更新 `business-context/` 对应领域页和入口索引。
+6. 更新 `fengwang/memory-map.md`。
+7. 运行 `fengchao check`，或使用项目中配置的等价命令。
+<!-- FENGCHAO-BUSINESS-MEMORY:END -->
