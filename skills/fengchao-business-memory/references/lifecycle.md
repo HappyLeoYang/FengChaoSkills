@@ -13,20 +13,29 @@ Only development completion writes `task-records/` and `changelog/`.
 
 ## Non-Development Modes
 
-- Plan capture writes `plan-records/` and updates `fengwang/memory-map.md`.
-- Conversation capture writes `conversation-records/` and updates `fengwang/memory-map.md`.
+- Plan capture writes `plan-records/` and updates `memory-map.md`.
+- Conversation capture writes `conversation-records/` and updates `memory-map.md`.
 - Neither mode writes `business-context/` unless the user explicitly confirms the information is current business truth.
 
-## Development Completion Flow
+## Development Completion: Two Tiers (lite / full)
+
+One-sentence tier test（一句话判定标准）:
+
+> **半年后的新会话是否需要知道这次改动的"为什么"？** 需要 → full；不需要（纯修复/重构/杂务）→ lite。
+> (Will a fresh session six months from now need the "why" of this change? Yes → full; no → lite.)
+
+- **lite** (no `--business-change`): writes one changelog entry + one memory-map row only. No task record, no business-context change. This is the default for bugfixes, refactors, and chores — keep the memory system noise-free.
+- **full** (`--business-change` provided): immutable task record + changelog + semantic merge into `business-context/` + memory-map rows. Requires `--change-kind added|modified|removed`, a stable `--rule-name`, and ideally a `--scenario`.
+- Escape hatch: `--with-task-record` forces a task record for a lite delivery (e.g. a major refactor worth documenting without business change).
+
+## Development Completion Flow (full tier)
 
 1. Gather evidence from the current conversation, final implementation, changed files, and verification output.
-2. Write one immutable `task-records/YYYY-MM-DD_NNN_title.md`.
-3. Write one `changelog/YYYY-MM-DD_NNN_title.md`.
-4. Update `TASK-INDEX.md` and `CHANGELOG-INDEX.md`.
-5. Merge only stable landed business facts into `business-context/`.
-6. Update `fengwang/memory-map.md`.
-7. Run `fengchao check`.
-8. In the final response, mention the memory artifacts updated and any verification gap.
+2. Run the five-question self-check and change-kind determination in `references/extraction-quality.md` (mandatory).
+3. Run `maintain` — it validates the semantic merge first and fails whole (no partial writes) on `rule_already_exists` / `rule_not_found`.
+4. The CLI writes the task record, changelog, index rows, merged domain file, and memory-map rows, then re-checks links.
+5. Run `fengchao.py check` before the final response.
+6. In the final response, mention the memory artifacts updated and any verification gap.
 
 ## Source Priority
 

@@ -2,12 +2,17 @@
 
 Use these rules after a completed development task to decide which memory files to update.
 
-## Always Update
+## Always Update (any delivery, lite or full)
+
+- `changelog/YYYY-MM-DD_NNN_title.md`
+- `changelog/CHANGELOG-INDEX.md`
+- `memory-map.md`
+
+## Additionally Update (full tier only — business meaning present)
 
 - `task-records/YYYY-MM-DD_NNN_title.md`
 - `task-records/TASK-INDEX.md`
-- `changelog/YYYY-MM-DD_NNN_title.md`
-- `changelog/CHANGELOG-INDEX.md`
+- domain file rule entries via the `maintain` semantic merge (never by hand)
 
 ## Update business-context When Stable Business Truth Changed
 
