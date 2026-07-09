@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 项目定位
 
-FengChaoSkills 是一个多 Agent 业务记忆工具包（本仓库是源码/分发仓库，不是被安装的目标项目）。它通过 `fengchao.py init` 把整个 skill 目录复制安装到目标项目中，帮助 AI 会话路由项目记忆、保存业务意图和开发证据。
+FengChaoSkills 是一个多 Agent 业务记忆工具包（本仓库是源码/分发仓库，不是被安装的目标项目）。它通过 `fengchao.py init` 在目标项目安装单一工具点（`.fengchao/`）与单一记忆根（默认 `fengchao/`），帮助 AI 会话路由项目记忆、保存业务意图和开发证据。总体设计见 `docs/DESIGN.md`（先读它，特别是第五部分设计红线）。
 
 ## 常用命令
 
@@ -14,51 +14,55 @@ FengChaoSkills 是一个多 Agent 业务记忆工具包（本仓库是源码/分
 # 运行全部测试（在仓库根目录）
 python3 -m unittest discover -s tests -v
 
-# 运行单个测试
-python3 -m unittest tests.test_fengchao_cli.FengChaoCliTests.test_init_creates_project_memory_artifacts_and_adapters
+# 运行单个测试类
+python3 -m unittest tests.test_fengchao_cli.DeltaMergeTests -v
+
+# 修改内联模板后必须重新生成 templates/ 与 adapters/（CI 校验一致性）
+python3 skills/fengchao-business-memory/scripts/fengchao.py export-templates --out .
 
 # 手动验证 CLI（在临时目录中执行，避免污染本仓库）
 python3 skills/fengchao-business-memory/scripts/fengchao.py --help
 ```
 
-测试通过 `subprocess` 在临时目录中调用真实 CLI，属于端到端测试，不 mock。
+测试通过 `subprocess` 在临时目录中调用真实 CLI，属于端到端测试，不 mock；纯函数（路由打分、语义合并）直接 import 单测。
 
 ## 核心架构
 
 ### 唯一逻辑入口：`fengchao.py`
 
-所有逻辑集中在 `skills/fengchao-business-memory/scripts/fengchao.py`（单文件 CLI）。同目录的 `check_links.py`、`inspect_project.py`、`check_required_updates.py`、`next_record_name.py` 只是兼容性薄包装，直接 import 并调用 `fengchao.py`。
+所有逻辑集中在 `skills/fengchao-business-memory/scripts/fengchao.py`（单文件 CLI，含 `__version__`，与 `pyproject.toml` 版本同步，CI 校验）。同目录的 `check_links.py`、`inspect_project.py`、`check_required_updates.py`、`next_record_name.py` 只是兼容性薄包装；两个 `__init__.py` 仅用于 PyPI 打包。
 
-CLI 子命令与记忆写入的对应关系（这是本项目的核心业务规则）：
+CLI 子命令与记忆写入的对应关系（核心业务规则）：
 
-| 子命令 | 写入目录 | 语义 |
-|--------|----------|------|
-| `init` | 全部脚手架 | 在目标项目初始化记忆目录和各 Agent 规则文件 |
-| `fengwang --query` | 只读 | 按 `fengwang/memory-map.md` 打分路由到相关记忆文件 |
-| `plan` | `plan-records/` + memory-map | 记录最终计划，**不是**当前业务事实 |
-| `conversation` | `conversation-records/` + memory-map | 记录用户业务解释，**不是**当前业务事实 |
-| `maintain` | `task-records/` + `changelog/` + memory-map，有 `--business-change` 时才写 `business-context/` | 仅真实开发交付后使用 |
-| `check` | 只读 | 校验必需文件存在 + Markdown 链接完整性；`--require-records-for-git-changes` 额外要求有 git 变更时当天必须有 task/changelog 记录 |
+| 子命令 | 写入 | 语义 |
+|--------|------|------|
+| `init` | 全部脚手架 | `--agents` 选 surface；`--memory-only` 只建记忆；默认注册 Claude Code hooks |
+| `fengwang --query` | 只读 | 词级打分 + IDF + 时间衰减路由，输出有 4KB 字节预算 |
+| `plan` / `conversation` | 参考层 + memory-map | 历史参考，**不是**当前业务事实 |
+| `maintain` | 证据层（分档） | lite（无 `--business-change`）只写 changelog；full 走 task-record + **B4 语义合并**（`--change-kind added/modified/removed` + `--rule-name` 稳定 key，先验证后写入，失败不留半成品） |
+| `check` | 只读 | `--warn` 恒 0 / `--strict` 要求 git 变更当天有 changelog / `--format json` 诊断信封（code 登记于 DESIGN.md 附录 C） |
+| `enable/disable/uninstall/status` | 生命周期 | disable→enable 逐字节还原；uninstall 永不碰记忆根 |
+| `hook session-start/stop-gate` | 只读 + `.fengchao/tmp/` 防重标记 | B1 硬门禁，hook_mode: remind/strict/off |
+| `migrate/archive/compact/plan-status/doctor/upgrade` | 维护类 | 全部不改写记忆内容语义（红线 5、8） |
 
-CLI 以 **当前工作目录** 作为目标项目根，配置读取 `.fengchao/config.yaml`（手写逐行解析，非 YAML 库，只支持扁平 `key: "value"` 格式）。
+CLI 以**当前工作目录**为目标项目根，配置读 `.fengchao/config.yaml`（手写逐行解析，只支持扁平 `key: "value"`）。`memory_root` 键缺失 = 老布局（兼容读取，`migrate` 迁移）。
 
-### 记忆分层语义（六个目录）
+### 关键不变量（改代码前必读）
 
-- `business-context/`：当前业务真相，只有已落地的稳定事实才能进入。
-- `task-records/`、`changelog/`：已交付任务的不可变证据，仅开发完成后写入。
-- `plan-records/`、`conversation-records/`：历史/参考记忆，默认不提升为当前真相。
-- `fengwang/`：路由入口（`FENGWANG.md` + `memory-map.md`），所有写入命令都会追加 memory-map 行。
-
-记录文件命名规则：`YYYY-MM-DD_NNN_标题slug.md`，NNN 为当天序号（见 `next_record_path`）。
-
-### 关键陷阱：模板内容三处并存
-
-生成到目标项目的文件内容以 `fengchao.py` 内的 Python 字符串函数为准（`context_index_template`、`fengwang_template`、`agents_snippet`、`claude_snippet`、`cursor_rule`、`opencode_config` 等）。仓库中的 `templates/` 和 `adapters/` 目录是给人看的参考副本，**不被 CLI 读取**，且内容与内联模板并不完全一致（如 adapter snippet 为英文、内联生成为中文）。修改生成产物必须改 `fengchao.py`，并手动同步 `templates/`、`adapters/` 与 `README.md` 中的对应内容。
+1. **真相层唯一现行原则（红线 9）**：domain 文件同一规则名同一时刻只能有一个现行条目，所有写入必须走 `merge_domain_rule()`，禁止绕过合并直接追加。
+2. **先验证后写入**：maintain 的合并失败必须发生在任何落盘之前。
+3. **卸载对称性（红线 6）**：新增任何宿主写入时，必须同步加入 `remove_host_injections()` 的摘除路径，并保证 disable→enable 逐字节还原（有测试）。
+4. **模板唯一事实源（D1）**：生成产物只改 `fengchao.py` 内联模板函数，`templates/`、`adapters/` 是 `export-templates` 的生成物，勿手改。
+5. 新增诊断必须先在 `docs/DESIGN.md` 附录 C 登记 code。
 
 ### Skill 分发结构
 
-`skills/fengchao-business-memory/` 是完整的可分发单元：`SKILL.md`（Agent 入口）+ `references/`（各模式的详细规则）+ `scripts/`。`init` 会把该目录整体复制到目标项目的 `.opencode/.claude/.cursor/.codex/.agents` 五个 `skills/fengchao-business-memory/` 路径下（清单见 `PROJECT_SKILL_PATHS`），新增文件时注意会被一并分发。
+`skills/fengchao-business-memory/` 是完整可分发单元：`SKILL.md`（Agent 入口）+ `references/`（各模式规则，**这是本项目的护城河 prompt 资产**，含 `extraction-quality.md` 强制自检清单）+ `scripts/`。`init` 把该目录复制到目标项目 `.fengchao/skill/`（唯一副本）；各 agent 目录只放薄入口/薄命令（路径常量 `AGENT_COMMAND_PATHS`，注释里有各工具约定的核实记录）。
+
+## Dogfooding
+
+本仓库自身用 FengChao 记录开发（`init --memory-only` 布局，见 `fengchao/`）。每次真实交付后用 `maintain` 记录；规划用 `plan` 记录。这既是活示例也是验收要求。
 
 ## 内容语言约定
 
-生成的记忆产物默认中文（`language: zh-CN`）；代码标识符用英文，测试断言大量依赖中文模板文案，改动模板措辞会连带影响测试。
+生成的记忆产物默认中文（`language: zh-CN`，`--language en` 有英文模板集）；代码标识符用英文、注释中文；测试断言依赖模板文案，改动措辞需同步测试。
