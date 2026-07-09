@@ -1,0 +1,67 @@
+# FengChao 记忆检查示例 workflow（B2 / 2.8）
+# 复制到你的项目 .github/workflows/ 下即可使用。
+# 行为：PR 中若有代码变更但没有对应的记忆变更（changelog/ 记录），则在 PR 上评论提醒。
+# 默认不阻塞合并；团队可把最后一步的 exit 0 改为 exit 1 升级为必需检查。
+name: FengChao memory check
+
+on:
+  pull_request:
+
+permissions:
+  pull-requests: write
+
+jobs:
+  memory-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 校验记忆结构与链接完整性
+        run: python3 .fengchao/skill/scripts/fengchao.py check --warn
+
+      - name: 检查代码变更是否附带记忆变更
+        id: memory
+        run: |
+          MEMORY_ROOT=$(grep -E '^memory_root:' .fengchao/config.yaml | sed 's/.*"\(.*\)"/\1/')
+          MEMORY_ROOT=${MEMORY_ROOT:-fengchao}
+          BASE="origin/${{ github.base_ref }}"
+          CHANGED=$(git diff --name-only "$BASE"...HEAD)
+          CODE_CHANGED=$(echo "$CHANGED" | grep -v "^$MEMORY_ROOT/" | grep -v "^\.fengchao/" || true)
+          MEMORY_CHANGED=$(echo "$CHANGED" | grep "^$MEMORY_ROOT/" || true)
+          if [ -n "$CODE_CHANGED" ] && [ -z "$MEMORY_CHANGED" ]; then
+            echo "needs_reminder=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "needs_reminder=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: 评论提醒（不阻塞合并）
+        if: steps.memory.outputs.needs_reminder == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = [
+              "🐝 **FengChao 提醒**：本 PR 包含代码变更，但没有对应的业务记忆变更。",
+              "",
+              "如果本次交付有业务含义，请在合并前补一条记录：",
+              "```bash",
+              "python3 .fengchao/skill/scripts/fengchao.py maintain \\",
+              "  --title \"<交付标题>\" --summary \"<业务诉求>\" --implementation \"<实现方案>\" \\",
+              "  [--business-change \"<业务规则变化>\" --change-kind added|modified|removed --rule-name \"<规则名>\"]",
+              "```",
+              "纯修复/重构（lite 档）也建议留一条 changelog。详见 `.fengchao/skill/SKILL.md`。",
+            ].join("\n");
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            if (!comments.some(c => c.body.includes("FengChao 提醒"))) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
