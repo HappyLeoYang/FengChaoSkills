@@ -93,7 +93,7 @@ Claude Code（薄入口 + 斜杠命令 + hooks 硬门禁）· Cursor（rule + �
 - [快速上手](docs/getting-started.md) · [核心概念](docs/concepts.md) · [术语表](docs/glossary.md)
 - [团队协作](docs/team-workflow.md) · [在已有大项目中引入](docs/existing-projects.md)
 - [FAQ](docs/faq.md) · [故障排查](docs/troubleshooting.md) · [CI 集成](docs/ci.md)
-- [总体设计蓝图](docs/DESIGN.md) · [演示样例](examples/README.md)
+- [总体设计蓝图](docs/DESIGN.md) · [开源发布路线图](docs/release-plan.md) · [演示样例](examples/README.md)
 
 ## 信任声明
 

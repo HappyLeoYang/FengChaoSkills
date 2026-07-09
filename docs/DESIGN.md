@@ -531,7 +531,7 @@ uvx fengchao uninstall
 | M1 低侵入安装与生命周期 | ✅ 全部完成 | 1.1–1.8 全部落地：单一安装点 + 单一记忆根、薄入口 + 三动词薄命令、marker 块化、disable/enable 逐字节可逆（有测试）、uninstall 不碰记忆、migrate、export-templates + CI 校验、dogfooding 启动 |
 | M2 可靠性内核 | ✅ 全部完成 | 2.1–2.8 全部落地：session-start/stop-gate hooks + settings.json 注册摘除、hook_mode 三档 + 会话防重、诊断信封 + `--format json` + 退出码契约、extraction-quality.md、B4 语义合并（先验证后写入）、B5 lite/full、install-git-hook、docs/ci 示例 workflow |
 | M3 规模与生命周期 | ✅ 全部完成 | 3.1–3.5 全部落地：打分 v2 纯函数 + 单测 + 4KB 预算、archive/compact、plan-status、doctor（孤儿/死行/老式条目/超长行）、upgrade + 版本化 |
-| M4 开源发布 | ✅ 开发部分完成 | 4.1 双语模板 + 测试、4.2 README 重写、4.3 docs 八篇、4.4 pyproject 打包（本地 wheel 实测可用）、4.5 examples 演示脚本、4.6 CONTRIBUTING/LICENSE/issue 模板、4.7 本节。**遗留的非开发动作**：PyPI 实际发布（`twine upload`）、GitHub 仓库开源与 CI 首跑、演示动图录制 |
+| M4 开源发布 | ✅ 开发部分完成 | 4.1 双语模板 + 测试、4.2 README 重写、4.3 docs 八篇、4.4 pyproject 打包（本地 wheel 实测可用）、4.5 examples 演示脚本、4.6 CONTRIBUTING/LICENSE/issue 模板、4.7 本节。**遗留的非开发动作**（执行规划见 [release-plan.md](release-plan.md)）：GitHub 开源与 CI 首跑、PyPI 发布、种子用户测试、插件市场（后置）、演示动图录制 |
 
 ### A4 命令目录核实结果（2026-07-08，已写入 `AGENT_COMMAND_PATHS` 注释）
 
