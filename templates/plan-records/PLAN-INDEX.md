@@ -1,6 +1,9 @@
+<!-- 本文件由 `fengchao.py export-templates` 生成，勿手改；修改请改 fengchao.py 内联模板（DESIGN.md D1） -->
+
 # Plan 记录索引
 
-> 计划、方案和待实现设计的渐进式入口。Plan 不是已落地业务事实。
+> 计划、方案和待实现设计的渐进式入口。Plan 不是已落地业务事实，不能直接当作当前业务真相。
+> 最后更新：YYYY-MM-DD
 
 ## 最近计划
 

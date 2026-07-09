@@ -1,19 +1,7 @@
 <!-- FENGCHAO-BUSINESS-MEMORY:START -->
-## FengChaoSkills Business Memory
+## FengChaoSkills 业务记忆
 
-Start new project conversations from `fengwang/FENGWANG.md`, then route through `fengwang/memory-map.md` to the smallest relevant context set.
-
-Project-local FengChao skill is available at `.claude/skills/fengchao-business-memory/SKILL.md`. When FengChaoSkills applies, read that file and follow it.
-
-Use task/changelog maintenance only after a real development task has landed project changes. Plan mode captures only `plan-records/`; durable user business explanations capture only `conversation-records/`. Plans and conversations do not update `business-context/` by default.
-
-Before the final response for a completed development task:
-
-1. Extract the user's true business intent, final delivered solution, key decisions, implementation evidence, and validation.
-2. Create an immutable `task-records/YYYY-MM-DD_NNN_title.md`.
-3. Create `changelog/YYYY-MM-DD_NNN_title.md`.
-4. Update `task-records/TASK-INDEX.md` and `changelog/CHANGELOG-INDEX.md`.
-5. If stable business behavior changed, update the relevant `business-context/` domain pages.
-6. Update `fengwang/memory-map.md`.
-7. Run `fengchao check`, or the equivalent command configured by the project.
+- 新会话先读 `fengchao/FENGWANG.md`，按 `fengchao/memory-map.md` 路由最小必要上下文。
+- 触发边界：仅真实开发交付后维护记忆；讨论、Plan 模式、只读分析不写 task-records/changelog。
+- 交付后执行 `python3 .fengchao/skill/scripts/fengchao.py maintain ...`；完整规则见 `.fengchao/skill/SKILL.md`，读取并遵循。
 <!-- FENGCHAO-BUSINESS-MEMORY:END -->
