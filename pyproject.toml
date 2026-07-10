@@ -29,6 +29,11 @@ classifiers = [
     "Topic :: Software Development :: Documentation",
 ]
 
+[project.urls]
+Homepage = "https://github.com/HappyLeoYang/FengChaoSkills"
+Repository = "https://github.com/HappyLeoYang/FengChaoSkills"
+Issues = "https://github.com/HappyLeoYang/FengChaoSkills/issues"
+
 [project.scripts]
 fengchao = "fengchao_skill.scripts.fengchao:main"
 

@@ -11,8 +11,8 @@ cd your-project
 uvx fengchao init
 
 # 或从源码（零依赖，任何有 Python 3.9+ 的机器都能跑）
-git clone <本仓库>
-python3 /path/to/FengChaoSkills/skills/fengchao-business-memory/scripts/fengchao.py init
+git clone https://github.com/HappyLeoYang/FengChaoSkills.git ~/FengChaoSkills
+python3 ~/FengChaoSkills/skills/fengchao-business-memory/scripts/fengchao.py init
 ```
 
 常用参数：

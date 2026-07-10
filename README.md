@@ -26,7 +26,8 @@ cd your-project
 uvx fengchao init            # 或 pipx run fengchao init
 
 # 方式二（当前可用）：git clone 后直接跑，零依赖
-python3 /path/to/FengChaoSkills/skills/fengchao-business-memory/scripts/fengchao.py init
+git clone https://github.com/HappyLeoYang/FengChaoSkills.git ~/FengChaoSkills
+python3 ~/FengChaoSkills/skills/fengchao-business-memory/scripts/fengchao.py init
 ```
 
 `init` 交互选择 agent（或 `--agents claude,cursor`，会自动探测已有的 `.claude/`、`.cursor/` 等目录），然后立刻验证：

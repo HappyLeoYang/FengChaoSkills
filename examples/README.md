@@ -5,7 +5,7 @@
 
 ## 完整演示脚本
 
-在任意空目录执行（假设已 clone 本仓库到 `~/FengChaoSkills`）：
+在任意空目录执行（先 `git clone https://github.com/HappyLeoYang/FengChaoSkills.git ~/FengChaoSkills`）：
 
 ```bash
 CLI=~/FengChaoSkills/skills/fengchao-business-memory/scripts/fengchao.py

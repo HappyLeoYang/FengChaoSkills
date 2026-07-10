@@ -44,6 +44,9 @@
 | 4 | **引擎保持 Python 标准库单文件** | 所有同类工具都有运行时（OpenSpec 要 Node，Spec Kit 要 uv/Python）；python3 在 Mac/Linux 出厂自带，且我们零 pip 依赖，比 `npm install -g` 还少一步。不因"看起来像主流"而改 Node |
 | 5 | **插件市场版仍必须保留项目级 init** | Superpowers 装的是方法论（跟人走），FengChao 的记忆根是项目数据（跟仓库走、团队经 git 共享），插件只是分发工具本体的通道，`/fengchao:init` 在项目里创建记忆根这一步不可省 |
 | 6 | **插件市场规范实现前必须重新核实**（`.claude-plugin` 清单格式、marketplace.json 结构、官方市场收录流程） | 各工具约定变动快，沿用 DESIGN.md A4 的先例：文档不预先猜测，落地时核实并把结论写进代码注释 |
+| 7 | **GitHub 仓库定为 `HappyLeoYang/FengChaoSkills`**（2026-07-09 R1 执行时确定） | 全部文档占位链接与 pyproject urls 以此为准 |
+| 8 | **Gitee 保留为双推镜像**：GitHub 为主远端（fetch + push），origin 追加 Gitee push URL，一条 push 同步两边 | 保留国内访问入口，对自媒体读者友好；一人维护下双推成本接近零 |
+| 9 | **develop-v2-fable 以 squash 方式合入 master** | 维护者选择：master 历史保持干净，v0.2.0 以单提交呈现；完整过程历史保留在 develop-v2-fable 分支 |
 
 ---
 
@@ -169,7 +172,7 @@
 | Windows 用户 `python3` 命令不存在（通常是 `python`/`py`） | 安装文档适用性 | R3 若有 Windows 反馈，文档补 Windows 说明；hook 命令的 `python3` 硬编码届时评估 |
 | 大仓库 `git status` 慢导致 stop-gate 超 500ms | hook 体验 | 已有 `hook_mode: off` 逃生舱 + `docs/existing-projects.md` 已写明；R3 收集实际数据 |
 | 插件规范变动 | R4 返工 | 决策 6：实现前核实，不预先编码 |
-| Gitee/GitHub 双远端长期同步成本 | 维护负担 | 维护者在 R1 决定：双推镜像 or GitHub 单主 |
+| Gitee/GitHub 双远端长期同步成本 | 维护负担 | 已决（2026-07-09）：双推镜像，见"已定决策"第 8 条 |
 | 老布局用户升级 | 兼容 | `migrate` + `upgrade` 已就绪，发布公告注明 v0.1 → v0.2 迁移命令 |
 
 ---
