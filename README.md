@@ -1,5 +1,9 @@
 # FengChaoSkills 蜂巢
 
+[![CI](https://github.com/HappyLeoYang/FengChaoSkills/actions/workflows/ci.yml/badge.svg)](https://github.com/HappyLeoYang/FengChaoSkills/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://github.com/HappyLeoYang/FengChaoSkills/blob/master/pyproject.toml)
+
 > Agent 无关的**项目业务事实账本**：让 AI 会话在真实开发交付后自动沉淀"业务真相 + 落地证据"，在新会话开始时按最小必要集合路由回这些记忆，并严格区分"当前事实"与"历史参考"。
 >
 > FengChao is an agent-agnostic, Markdown + Git based **business fact ledger** for AI coding sessions: it captures business truth with evidence after real delivery, routes the minimal memory set into fresh sessions, and never confuses "current fact" with "historical reference".
