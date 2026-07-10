@@ -1,6 +1,7 @@
 # FengChaoSkills 蜂巢
 
 [![CI](https://github.com/HappyLeoYang/FengChaoSkills/actions/workflows/ci.yml/badge.svg)](https://github.com/HappyLeoYang/FengChaoSkills/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/fengchao-skills)](https://pypi.org/project/fengchao-skills/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://github.com/HappyLeoYang/FengChaoSkills/blob/master/pyproject.toml)
 
@@ -26,7 +27,7 @@ FengChao 用两个别人基本没做的设计解决这两个问题：
 ```bash
 cd your-project
 
-# 方式一（推荐，发布后可用）：免安装一次性运行
+# 方式一（推荐）：免安装一次性运行
 uvx fengchao-skills init     # 或 pipx run fengchao-skills init
 
 # 方式二（当前可用）：git clone 后直接跑，零依赖

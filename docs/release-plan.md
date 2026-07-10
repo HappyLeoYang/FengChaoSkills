@@ -79,9 +79,9 @@
 
 ### 验收
 
-- [ ] 陌生机器 `git clone` + `python3 .../fengchao.py init` 跑通（README 路径照抄可用）
-- [ ] CI 全绿
-- [ ] README 无占位链接
+- [x] 陌生机器 `git clone` + `python3 .../fengchao.py init` 跑通（README 路径照抄可用，2026-07-09 实测）
+- [x] CI 全绿（Python 3.9–3.13 矩阵，2026-07-09 首跑即绿）
+- [x] README 无占位链接
 
 ---
 
@@ -114,7 +114,7 @@
 
 ### 验收
 
-- [ ] 干净机器 `uvx fengchao-skills init` 成功装出 `.fengchao/skill/` 完整副本并 `check` 通过（本地 wheel 已验证过等价路径，见 DESIGN.md 第七部分 M4）
+- [x] 干净机器 `uvx fengchao-skills init` 成功装出 `.fengchao/skill/` 完整副本并 `check` 通过（2026-07-09 实测：全新 venv 从 PyPI 安装 0.2.0，init/status/check 全绿，skill 副本与源码逐字节一致）
 
 ---
 

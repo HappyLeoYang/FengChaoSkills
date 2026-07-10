@@ -7,7 +7,7 @@
 ```bash
 cd your-project
 
-# 发布后（推荐）：免安装一次性运行
+# 推荐：免安装一次性运行
 uvx fengchao-skills init
 
 # 或从源码（零依赖，任何有 Python 3.9+ 的机器都能跑）
