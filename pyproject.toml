@@ -6,7 +6,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "fengchao"
+name = "fengchao-skills"
 version = "0.2.0"
 description = "Agent 无关的项目业务事实账本：基于 Markdown + Git 的 AI 会话业务记忆工具包（零依赖、零遥测）"
 readme = "README.md"
@@ -34,12 +34,14 @@ Homepage = "https://github.com/HappyLeoYang/FengChaoSkills"
 Repository = "https://github.com/HappyLeoYang/FengChaoSkills"
 Issues = "https://github.com/HappyLeoYang/FengChaoSkills/issues"
 
+# 命令名与包名一致，保证 `uvx fengchao-skills <子命令>` 一条命令直达。
+# 注意：PyPI 名 `fengchao` 已被占用（ijiwei 的大模型服务 SDK），见 docs/release-plan.md 已定决策第 10 条。
 [project.scripts]
-fengchao = "fengchao_skill.scripts.fengchao:main"
+fengchao-skills = "fengchao_skill.scripts.fengchao:main"
 
 [tool.setuptools]
 # 把 skill 目录整体作为包发布，SKILL.md 与 references/ 随 wheel 分发，
-# 保证 `uvx fengchao init` 也能安装完整 skill 副本。
+# 保证 `uvx fengchao-skills init` 也能安装完整 skill 副本。
 packages = ["fengchao_skill", "fengchao_skill.scripts"]
 
 [tool.setuptools.package-dir]

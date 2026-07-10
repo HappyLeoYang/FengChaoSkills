@@ -14,7 +14,7 @@
 
 ## 不用 Claude Code 能用吗？
 
-能。五个 agent surface（Claude Code / Cursor / OpenCode / Codex / 通用 AGENTS.md）都有薄入口；hooks 硬门禁目前只有 Claude Code 支持，其他工具可用 `fengchao install-git-hook` 装可选的 git pre-commit 提醒兜底。效果分级：Claude Code（全自动）> Cursor/OpenCode（规则驱动 + 手动命令）> 纯 AGENTS.md（约定驱动）。
+能。五个 agent surface（Claude Code / Cursor / OpenCode / Codex / 通用 AGENTS.md）都有薄入口；hooks 硬门禁目前只有 Claude Code 支持，其他工具可用 `fengchao-skills install-git-hook` 装可选的 git pre-commit 提醒兜底。效果分级：Claude Code（全自动）> Cursor/OpenCode（规则驱动 + 手动命令）> 纯 AGENTS.md（约定驱动）。
 
 ## AI 忘了维护记忆怎么办？
 
@@ -30,8 +30,8 @@
 
 ## 想换个工具/不想用了怎么办？
 
-`fengchao uninstall` 移除工具本体，记忆是一套完好的人类可读 Markdown 文档库，永远属于你。这是设计红线：升级、迁移、卸载都不碰记忆数据。
+`fengchao-skills uninstall` 移除工具本体，记忆是一套完好的人类可读 Markdown 文档库，永远属于你。这是设计红线：升级、迁移、卸载都不碰记忆数据。
 
 ## 从旧版（六目录散在根下）怎么升级？
 
-`fengchao migrate` 一键迁移到单一记忆根布局，自动改写所有相对链接并跑 check 验证；然后 `fengchao upgrade` 刷新宿主注入。见[故障排查](troubleshooting.md)。
+`fengchao-skills migrate` 一键迁移到单一记忆根布局，自动改写所有相对链接并跑 check 验证；然后 `fengchao-skills upgrade` 刷新宿主注入。见[故障排查](troubleshooting.md)。

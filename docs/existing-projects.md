@@ -13,7 +13,7 @@
 
 ```bash
 cd legacy-project
-uvx fengchao init --agents claude    # 只接入你在用的工具
+uvx fengchao-skills init --agents claude    # 只接入你在用的工具
 ```
 
 ## 不要试图一次性补全历史

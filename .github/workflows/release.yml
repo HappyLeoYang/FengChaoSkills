@@ -1,0 +1,44 @@
+# PyPI 自动发布（release-plan.md Phase R2）：GitHub 上发布 Release 即触发，
+# 经 Trusted Publishing（OIDC）上传，无需在任何地方保存 PyPI token。
+# PyPI 侧一次性配置：pypi.org → Your account → Publishing → Add a new pending publisher
+#   PyPI Project Name: fengchao-skills
+#   Owner: HappyLeoYang   Repository: FengChaoSkills
+#   Workflow name: release.yml   Environment name: pypi
+name: Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  pypi-publish:
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      # 发布前最后一道校验：版本一致性 + 全量测试
+      - name: Verify version consistency
+        run: |
+          CLI_VERSION=$(python3 -c "import re,pathlib; print(re.search(r'__version__ = \"([^\"]+)\"', pathlib.Path('skills/fengchao-business-memory/scripts/fengchao.py').read_text()).group(1))")
+          TOML_VERSION=$(python3 -c "import re,pathlib; print(re.search(r'^version = \"([^\"]+)\"', pathlib.Path('pyproject.toml').read_text(), re.M).group(1))")
+          echo "fengchao.py=$CLI_VERSION pyproject.toml=$TOML_VERSION tag=$GITHUB_REF_NAME"
+          test "$CLI_VERSION" = "$TOML_VERSION"
+          test "v$CLI_VERSION" = "$GITHUB_REF_NAME"
+
+      - name: Run tests
+        run: python3 -m unittest discover -s tests
+
+      - name: Build distributions
+        run: |
+          python3 -m pip install --upgrade build
+          python3 -m build
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1

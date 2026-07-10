@@ -1,7 +1,7 @@
 # FengChaoSkills 产品设计与开发总体规划
 
-> 版本：v1.1
-> 日期：2026-07-07
+> 版本：v1.3
+> 日期：2026-07-09
 > 性质：本文档是 FengChaoSkills 从 demo 走向成熟开源项目的总设计文档。任何后续开发者应先读本文档，再读 `CLAUDE.md` 和 `skills/fengchao-business-memory/` 下的规则文件。
 > 读者：项目维护者、后续参与开发的工程师、（部分章节）未来的开源贡献者。
 
@@ -12,6 +12,7 @@
 | v1.0 | 2026-07-07 | 蓝图初版：项目理解、四条产品主线、M1–M4 路线图、安装设计 |
 | v1.1 | 2026-07-07 | 合并 OpenSpec 专项调研结论：新增 B4 真相层 delta 语义合并（替代原冲突检测方案）、B5 maintain 分档、A4 薄命令、B2 升级为 agent 契约、C1 增加预算管制、M1 增加 dogfooding；新增第六部分借鉴决议、附录 B 规则条目格式规范、附录 C 诊断契约；新增红线 9 |
 | v1.2 | 2026-07-09 | 蓝图 → 现状：M1–M4 全部开发任务已实现并通过测试（v0.2.0），新增第七部分实施状态；1.6 的现状盘点保留作为历史记录，其所列缺失项均已解决 |
+| v1.3 | 2026-07-09 | R2 核查：PyPI 名 `fengchao` 已被占用，包名与 console script 定为 `fengchao-skills`（决策记录见 release-plan.md 第 10 条），同步 D4 与 4.2/4.4 的安装命令 |
 
 ---
 
@@ -331,7 +332,7 @@ fengchao maintain \
 
 #### D4. 发布渠道与零依赖红线
 
-- PyPI 发包（包名建议 `fengchao`，console script `fengchao`），零依赖使得 `uvx fengchao init` / `pipx run fengchao init` 开箱即用——这是目标安装路径（见第四部分）。
+- PyPI 发包（包名与 console script 均为 `fengchao-skills`——原建议名 `fengchao` 在 PyPI 已被活跃包占用，2026-07-09 核查确定，见 release-plan.md 决策 10），零依赖使得 `uvx fengchao-skills init` / `pipx run fengchao-skills init` 开箱即用——这是目标安装路径（见第四部分）。
 - 保留 git clone + `python3 scripts/fengchao.py` 的原始路径（无 Python 包管理器环境的兜底）。
 - **红线**：运行时零第三方依赖永不破坏；永不加遥测（OpenSpec 有遥测需环境变量关闭，我们把"零遥测"写进 README 作为信任声明）。
 
@@ -394,7 +395,7 @@ fengchao maintain \
 | 4.1 | 英文模板集 + 测试参数化（D3） | `fengchao.py`、`tests/` | zh/en 双矩阵绿 |
 | 4.2 | README 重写（按第四部分教程草案）+ 差异化叙事（1.3 的定位表） | `README.md` | 60 秒内看懂"是什么、怎么装、怎么停" |
 | 4.3 | `docs/` 细分文档集（借鉴 OpenSpec 文档组织，初版 8 篇）：getting-started、concepts、glossary、faq、team-workflow、existing-projects（在已有大项目中引入）、troubleshooting、ci | `docs/` | 每篇单一主题、互相链接 |
-| 4.4 | PyPI 打包发布，`uvx fengchao init` 可用（D4） | `pyproject.toml` | 干净机器实测 |
+| 4.4 | PyPI 打包发布，`uvx fengchao-skills init` 可用（D4） | `pyproject.toml` | 干净机器实测 |
 | 4.5 | 示例项目 + 终端演示动图（可直接用本仓库 dogfooding 记录作素材） | `examples/` | init→开发→自动维护→路由 完整演示 |
 | 4.6 | CONTRIBUTING.md、LICENSE、issue 模板 | 仓库根 | — |
 | 4.7 | 本文档更新为实际状态（蓝图 → 现状） | `docs/DESIGN.md` | — |
@@ -430,7 +431,7 @@ fengchao maintain \
 ```bash
 # 引入（免安装，60 秒）
 cd your-project
-uvx fengchao init            # 交互选择 agent；或 --agents claude,cursor
+uvx fengchao-skills init     # 交互选择 agent；或 --agents claude,cursor
 
 # 从此不用管。AI 会话会：
 #   - 新会话自动从 fengwang 路由回业务记忆
@@ -443,13 +444,13 @@ uvx fengchao init            # 交互选择 agent；或 --agents claude,cursor
 #   /fengchao:status    看看记忆系统状态
 
 # 想看看它在干什么
-uvx fengchao status
+uvx fengchao-skills status
 
 # 想暂停（保留一切，随时恢复）
-uvx fengchao disable
+uvx fengchao-skills disable
 
 # 想彻底移除工具（记忆文档保留，属于你）
-uvx fengchao uninstall
+uvx fengchao-skills uninstall
 ```
 
 ### 4.3 使用教程草案（未来 README 骨架）

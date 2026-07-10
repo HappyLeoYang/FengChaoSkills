@@ -31,7 +31,7 @@
 ## 冲突处理
 
 - 记录文件按 `日期_序号_标题` 命名，多人同日交付极少冲突；冲突时保留双方（序号顺延）。
-- `memory-map.md` 是追加式表格，git 合并冲突直接两边都保留，然后跑 `fengchao compact` 去重重排。
+- `memory-map.md` 是追加式表格，git 合并冲突直接两边都保留，然后跑 `fengchao-skills compact` 去重重排。
 - domain 文件的规则条目冲突说明两人改了同一条业务规则——这是**真正的业务冲突**，应该当面对齐后用一次 `maintain --change-kind modified` 收敛。
 
 ## 多 agent 团队

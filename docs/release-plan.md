@@ -38,7 +38,7 @@
 
 | # | 决策 | 理由 |
 |---|------|------|
-| 1 | **分发三通道**：① GitHub 源码直跑（基础，零门槛）② PyPI（`uvx fengchao init`，非 Claude Code 用户与 CI 场景）③ Claude Code 插件市场（Claude Code 用户主推） | 每个通道服务不同人群，互不替代 |
+| 1 | **分发三通道**：① GitHub 源码直跑（基础，零门槛）② PyPI（`uvx fengchao-skills init`，非 Claude Code 用户与 CI 场景）③ Claude Code 插件市场（Claude Code 用户主推） | 每个通道服务不同人群，互不替代 |
 | 2 | **发布顺序：GitHub 先行 → 种子用户测试通过 → 才做插件市场** | 维护者明确要求：插件市场稍晚，先用真实用户验证产品 |
 | 3 | **PyPI 发布用 GitHub Actions + Trusted Publishing（OIDC）** | 维护者无需本地 twine、无需管理 token；发布动作简化为"在 GitHub 点 Release" |
 | 4 | **引擎保持 Python 标准库单文件** | 所有同类工具都有运行时（OpenSpec 要 Node，Spec Kit 要 uv/Python）；python3 在 Mac/Linux 出厂自带，且我们零 pip 依赖，比 `npm install -g` 还少一步。不因"看起来像主流"而改 Node |
@@ -47,6 +47,7 @@
 | 7 | **GitHub 仓库定为 `HappyLeoYang/FengChaoSkills`**（2026-07-09 R1 执行时确定） | 全部文档占位链接与 pyproject urls 以此为准 |
 | 8 | **Gitee 保留为双推镜像**：GitHub 为主远端（fetch + push），origin 追加 Gitee push URL，一条 push 同步两边 | 保留国内访问入口，对自媒体读者友好；一人维护下双推成本接近零 |
 | 9 | **develop-v2-fable 以 squash 方式合入 master** | 维护者选择：master 历史保持干净，v0.2.0 以单提交呈现；完整过程历史保留在 develop-v2-fable 分支 |
+| 10 | **PyPI 包名定为 `fengchao-skills`，console script 同名**（2026-07-09 R2 核查确定） | `fengchao` 已被活跃包占用（ijiwei 的"大模型框架服务调用SDK" v2.5.1）；命令与包同名保证 `uvx fengchao-skills <子命令>` 一条命令直达且无误装他人包的风险；日常操作走项目内副本，全局命令仅低频生命周期操作使用，名字长的代价可忽略 |
 
 ---
 
@@ -86,7 +87,7 @@
 
 ## 四、Phase R2：PyPI 自动发布（可与 R1 同步准备，R1 后启用）
 
-> 目标：`uvx fengchao init` 全球可用；此后每次发版只需在 GitHub 发 Release。
+> 目标：`uvx fengchao-skills init` 全球可用；此后每次发版只需在 GitHub 发 Release。
 > 前置依赖：R1（Trusted Publishing 要绑定 GitHub 仓库）。
 
 ### 执行清单
@@ -101,7 +102,7 @@
    - 步骤：checkout → setup-python → `python -m build` → `pypa/gh-action-pypi-publish`（OIDC，无 token）；
    - `environment: pypi` + `permissions: id-token: write`。
 4. **首次发布演练**
-   - GitHub 上创建 Release `v0.2.0` → 观察自动发布 → 干净机器 `uvx fengchao init` 冒烟。
+   - GitHub 上创建 Release `v0.2.0` → 观察自动发布 → 干净机器 `uvx fengchao-skills init` 冒烟。
 
 ### 版本发布 SOP（沉淀给后续所有版本）
 
@@ -113,7 +114,7 @@
 
 ### 验收
 
-- [ ] 干净机器 `uvx fengchao init` 成功装出 `.fengchao/skill/` 完整副本并 `check` 通过（本地 wheel 已验证过等价路径，见 DESIGN.md 第七部分 M4）
+- [ ] 干净机器 `uvx fengchao-skills init` 成功装出 `.fengchao/skill/` 完整副本并 `check` 通过（本地 wheel 已验证过等价路径，见 DESIGN.md 第七部分 M4）
 
 ---
 
@@ -168,7 +169,7 @@
 
 | 风险/问题 | 影响 | 预案 |
 |-----------|------|------|
-| PyPI 包名 `fengchao` 被占 | R2 阻塞 | 备选名 + 全文档同步改（R2 清单第 1 步优先做） |
+| PyPI 包名 `fengchao` 被占 | R2 阻塞 | 已决（2026-07-09）：确实被占，改用 `fengchao-skills`，见"已定决策"第 10 条 |
 | Windows 用户 `python3` 命令不存在（通常是 `python`/`py`） | 安装文档适用性 | R3 若有 Windows 反馈，文档补 Windows 说明；hook 命令的 `python3` 硬编码届时评估 |
 | 大仓库 `git status` 慢导致 stop-gate 超 500ms | hook 体验 | 已有 `hook_mode: off` 逃生舱 + `docs/existing-projects.md` 已写明；R3 收集实际数据 |
 | 插件规范变动 | R4 返工 | 决策 6：实现前核实，不预先编码 |

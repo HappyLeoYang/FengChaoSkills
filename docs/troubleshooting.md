@@ -8,7 +8,7 @@
 
 某条索引/记录里的链接指向不存在的文件。常见原因：记录被手工改名或删除、归档后有残留旧链接。处理：
 
-1. `fengchao doctor` — 如果目标文件其实被移动/归档了，会给出 `index_dead_row` 和新位置；
+1. `fengchao-skills doctor` — 如果目标文件其实被移动/归档了，会给出 `index_dead_row` 和新位置；
 2. 按 fix 建议修正链接后重跑 `check`。
 
 ## maintain 报 rule_already_exists / rule_not_found
@@ -59,4 +59,4 @@ python3 .fengchao/skill/scripts/fengchao.py compact   # 去重、重排、折叠
 - 记录确实不存在：读 `fengchao/FENGWANG.md` + `business-context/CONTEXT-INDEX.md` 建立全局图；
 - 输出被截断：`(已截断：还有 N 条低分匹配)` 说明预算用尽，细化查询词而不是调大 `--budget`。
 
-其他问题请提 issue（附 `fengchao status --format json` 输出）。
+其他问题请提 issue（附 `fengchao-skills status --format json` 输出）。

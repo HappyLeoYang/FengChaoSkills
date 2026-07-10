@@ -27,7 +27,7 @@ FengChao 用两个别人基本没做的设计解决这两个问题：
 cd your-project
 
 # 方式一（推荐，发布后可用）：免安装一次性运行
-uvx fengchao init            # 或 pipx run fengchao init
+uvx fengchao-skills init     # 或 pipx run fengchao-skills init
 
 # 方式二（当前可用）：git clone 后直接跑，零依赖
 git clone https://github.com/HappyLeoYang/FengChaoSkills.git ~/FengChaoSkills
@@ -37,7 +37,7 @@ python3 ~/FengChaoSkills/skills/fengchao-business-memory/scripts/fengchao.py ini
 `init` 交互选择 agent（或 `--agents claude,cursor`，会自动探测已有的 `.claude/`、`.cursor/` 等目录），然后立刻验证：
 
 ```bash
-fengchao status    # 全绿即可
+uvx fengchao-skills status    # 全绿即可（源码方式则用 python3 .../fengchao.py status）
 ```
 
 ### init 写入了什么（全部可见、可 diff、可干净移除）
@@ -69,9 +69,9 @@ fengchao status    # 全绿即可
 ## 停用与卸载（三级分离，随时反悔）
 
 ```bash
-fengchao disable     # 暂停：摘除全部注入，记忆和工具本体全保留；enable 逐字节还原
-fengchao uninstall   # 移除工具：删 .fengchao/，记忆文档保留（它属于你）
-fengchao uninstall --purge-memory   # 连记忆一起删，需要二次确认
+uvx fengchao-skills disable     # 暂停：摘除全部注入，记忆和工具本体全保留；enable 逐字节还原
+uvx fengchao-skills uninstall   # 移除工具：删 .fengchao/，记忆文档保留（它属于你）
+uvx fengchao-skills uninstall --purge-memory   # 连记忆一起删，需要二次确认
 ```
 
 `disable` 后 `git diff` 干净可读；每一个写入你项目的字节都有对应的干净摘除路径。即使卸载，记忆仍是一套完好的、人类可读的 Markdown 文档库。
@@ -91,7 +91,7 @@ fengchao uninstall --purge-memory   # 连记忆一起删，需要二次确认
 
 ## 支持的 Agent Surface
 
-Claude Code（薄入口 + 斜杠命令 + hooks 硬门禁）· Cursor（rule + 命令）· OpenCode（命令 + opencode.json）· Codex / 通用 Agents（AGENTS.md marker 块）。不用 Claude Code 也能用：五个 surface + 可选 git pre-commit 钩子兜底（`fengchao install-git-hook`）。
+Claude Code（薄入口 + 斜杠命令 + hooks 硬门禁）· Cursor（rule + 命令）· OpenCode（命令 + opencode.json）· Codex / 通用 Agents（AGENTS.md marker 块）。不用 Claude Code 也能用：五个 surface + 可选 git pre-commit 钩子兜底（`fengchao-skills install-git-hook`）。
 
 ## 文档
 

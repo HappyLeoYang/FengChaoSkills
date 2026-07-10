@@ -18,3 +18,4 @@
 | 2026-07-09 | `routing` | M3 路由打分 v2 与记忆生命周期命令 | `development` | [2026-07-09_004_m3-路由打分-v2-与记忆生命周期命令.md](2026-07-09_004_m3-路由打分-v2-与记忆生命周期命令.md) |
 | 2026-07-09 | `distribution` | M4 开源发布就绪：双语模板、文档集与打包 | `development` | [2026-07-09_005_m4-开源发布就绪：双语模板、文档集与打包.md](2026-07-09_005_m4-开源发布就绪：双语模板、文档集与打包.md) |
 | 2026-07-09 | `general` | R1 GitHub 开源上线 | `development` | [2026-07-09_006_r1-github-开源上线.md](2026-07-09_006_r1-github-开源上线.md) |
+| 2026-07-09 | `distribution` | R2 PyPI 发布准备：包名定为 fengchao-skills 并接入 Trusted Publishing 自动发布 | `development` | [2026-07-09_007_r2-pypi-发布准备：包名定为-fengchao-skills-并接入-trusted-publishing-自动发布.md](2026-07-09_007_r2-pypi-发布准备：包名定为-fengchao-skills-并接入-trusted-publishing-自动发布.md) |
