@@ -1,6 +1,8 @@
 # FengWang System
 
-FengWang is the project memory router. A fresh AI conversation should start from `fengwang/FENGWANG.md`, then use `fengwang/memory-map.md` or `fengchao.py fengwang --query` to find the smallest relevant memory set.
+FengWang is the project memory router. A fresh AI conversation should start from `<memory-root>/FENGWANG.md` (default `fengchao/FENGWANG.md`; legacy layout `fengwang/FENGWANG.md`), then use `memory-map.md` or `fengchao.py fengwang --query` to find the smallest relevant memory set.
+
+Routing output is byte-budgeted (default 4KB). Read the top 3 results first; if the output says it was truncated, refine the query instead of loading more.
 
 ## Responsibilities
 

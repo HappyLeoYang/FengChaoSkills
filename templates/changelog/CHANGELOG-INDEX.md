@@ -1,6 +1,9 @@
+<!-- 本文件由 `fengchao.py export-templates` 生成，勿手改；修改请改 fengchao.py 内联模板（DESIGN.md D1） -->
+
 # Changelog 索引
 
-> changelog 的渐进式入口。
+> changelog 的渐进式入口。用于按时间、领域、风险、接口和数据变化快速定位历史变更。
+> 最后更新：YYYY-MM-DD
 
 ## 最近变更
 

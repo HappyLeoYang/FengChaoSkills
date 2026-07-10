@@ -1,0 +1,52 @@
+# FengChao CI（D5）：unittest 矩阵 + 模板同步校验 + 版本一致性 + 全流程冒烟
+name: CI
+
+on:
+  push:
+    branches: [master, main, develop*]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: 运行测试
+        run: python -m unittest discover -s tests -v
+
+      - name: export-templates 同步校验（D1：内联模板是唯一事实源）
+        run: |
+          python skills/fengchao-business-memory/scripts/fengchao.py export-templates --out /tmp/exported
+          diff -r /tmp/exported/templates templates
+          diff -r /tmp/exported/adapters adapters
+
+      - name: 版本一致性（__version__ == pyproject.version）
+        run: |
+          CLI_VERSION=$(python -c "import sys; sys.path.insert(0, 'skills/fengchao-business-memory/scripts'); import fengchao; print(fengchao.__version__)")
+          grep -q "^version = \"$CLI_VERSION\"$" pyproject.toml
+
+      - name: 全流程冒烟（init → plan → conversation → maintain → check）
+        run: |
+          CLI="$GITHUB_WORKSPACE/skills/fengchao-business-memory/scripts/fengchao.py"
+          mkdir -p /tmp/fengchao-smoke && cd /tmp/fengchao-smoke
+          git init -q .
+          python "$CLI" init --project-name Smoke --agents claude
+          python "$CLI" plan --title "冒烟计划" --goal "验证全流程" --plan "按步骤执行"
+          python "$CLI" conversation --title "冒烟解释" --summary "术语说明" --term "冒烟=端到端验证"
+          python "$CLI" maintain --title "冒烟交付" --summary "验证维护流程" --implementation "写入记录" \
+            --business-change "冒烟规则生效。" --change-kind added --rule-name "冒烟规则" --scenario "CI 中执行"
+          python "$CLI" maintain --title "冒烟修复" --summary "lite 档" --implementation "小修"
+          python "$CLI" fengwang --query "冒烟规则" | grep -q "task-records/"
+          python "$CLI" check --strict
+          python "$CLI" status --format json | python -m json.tool > /dev/null
+          python "$CLI" disable && python "$CLI" enable
+          python "$CLI" uninstall
+          test -d fengchao

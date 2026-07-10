@@ -8,11 +8,26 @@
 business-context/
   CONTEXT-INDEX.md
   domains/
-  architecture/
-  data/
   impact-matrix.md
   debt-registry.md
 ```
+
+Optional subdirectories (`architecture/`, `data/`) may be added when the project needs them.
+
+## Rule Entries (domain files)
+
+Each domain file keeps two managed sections: `## 当前业务规则` (current rules) and `## 已废除规则` (retired rules). A current rule is a structured entry keyed by a stable rule name:
+
+```markdown
+### 规则：设计单审核流程
+- **规则**：设计单最终通过必须依次经过主管审核和经理审核。
+- **场景**：设计师提交后，主管一审通过、经理二审通过才进入"已通过"状态；任一级驳回整单退回。
+- **来源**：[task-record 链接]
+- **生效**：YYYY-MM-DD
+- **沿革**：[历任旧版本 task-record 链接，最近的在前]
+```
+
+Never edit these sections by hand: they are maintained exclusively by `maintain --business-change --change-kind added|modified|removed --rule-name ...` so that one rule name always has exactly one active entry. Terms, preferences, pitfalls, and rejected options do NOT use this format — they live in conversation-records and the debt registry.
 
 ## CONTEXT-INDEX.md
 

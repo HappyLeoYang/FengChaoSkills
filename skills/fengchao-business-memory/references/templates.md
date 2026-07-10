@@ -1,6 +1,6 @@
 # Manual Templates
 
-Use these only when the CLI is insufficient.
+Use these only when the CLI is insufficient. Never hand-write rule entries into `business-context/` domain files — that must go through `maintain --business-change` (semantic merge keeps one active entry per rule).
 
 ## Task Record
 

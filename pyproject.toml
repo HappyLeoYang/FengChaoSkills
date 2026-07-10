@@ -1,0 +1,50 @@
+# FengChao 打包配置（D4）
+# 红线：运行时零第三方依赖；zero telemetry。版本号与 fengchao.py 的 __version__ 保持一致（CI 校验）。
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fengchao"
+version = "0.2.0"
+description = "Agent 无关的项目业务事实账本：基于 Markdown + Git 的 AI 会话业务记忆工具包（零依赖、零遥测）"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "liuzhu" }]
+keywords = ["ai", "agent", "memory", "business-memory", "claude-code", "cursor", "codex", "opencode"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Documentation",
+]
+
+[project.urls]
+Homepage = "https://github.com/HappyLeoYang/FengChaoSkills"
+Repository = "https://github.com/HappyLeoYang/FengChaoSkills"
+Issues = "https://github.com/HappyLeoYang/FengChaoSkills/issues"
+
+[project.scripts]
+fengchao = "fengchao_skill.scripts.fengchao:main"
+
+[tool.setuptools]
+# 把 skill 目录整体作为包发布，SKILL.md 与 references/ 随 wheel 分发，
+# 保证 `uvx fengchao init` 也能安装完整 skill 副本。
+packages = ["fengchao_skill", "fengchao_skill.scripts"]
+
+[tool.setuptools.package-dir]
+"fengchao_skill" = "skills/fengchao-business-memory"
+"fengchao_skill.scripts" = "skills/fengchao-business-memory/scripts"
+
+[tool.setuptools.package-data]
+"fengchao_skill" = ["SKILL.md", "references/*.md", "agents/*.yaml"]
