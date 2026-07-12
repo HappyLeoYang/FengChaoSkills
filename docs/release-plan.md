@@ -127,7 +127,7 @@
 
 1. **招募**：3–5 人，覆盖面要求——至少 1 个 Claude Code 用户（验证 hooks 全链路）、1 个 Cursor 用户（验证薄命令/规则通道）、1 个已有大量 CLAUDE.md 自定义内容的存量项目（验证 marker 块不打架）。维护者可从自媒体读者中招募。
 2. **给用户的材料**：README Quick Start + `examples/README.md` 演示脚本 + 反馈渠道（GitHub Discussions 或微信群）。
-3. **重点收集的反馈**（对应产品的核心赌注）：
+3. **重点收集的反馈**（对应产品的核心赌注；每条反馈统一登记于 [seed-feedback.md](seed-feedback.md) 台账）：
    - 安装体验：几分钟装完？哪一步卡住？
    - 打扰度：stop-gate remind 是否恰到好处？有没有"烦到想关掉"（若普遍想关 → 默认档位要重新评估）；
    - maintain 心智负担：AI 自动维护的记录质量如何？`--rule-name` 稳定 key 的概念用户/AI 是否用得对（重点观察 modified 时是否乱建新规则名——`extraction-quality.md` 反模式清单的实战检验）；
