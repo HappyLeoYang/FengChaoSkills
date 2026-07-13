@@ -9,6 +9,7 @@
 | 编号 | 日期 | 来源 | 维度 | 反馈内容 | 处置状态 | 落地链接 |
 |------|------|------|------|----------|----------|----------|
 | F-001 | 2026-07-12 | 维护者本人实测（macOS，有 Python 无 uv/pipx） | 安装体验 | README 方式一 `uvx fengchao-skills init` 直接 `command not found`，`pipx run` 同样；只有 Python 环境的普通用户照抄 Quick Start 第一行即撞墙，且文档未说明 uvx/pipx 需要前置安装 | 待处理 | — |
+| F-002 | 2026-07-12 | 种子用户（维护者转述） | token 成本 | 引入本 skill 相比不使用会多消耗多少 tokens？有没有量化预估？成本构成：宿主 marker 块与薄入口的常驻注入、SessionStart 路由注入（FENGWANG + `fengwang --query` 输出，≤4KB 预算）、路由命中后被读取的记录文件（8–12 个最小集合）、maintain/自检的额外输出、stop-gate 提醒文本 | 待复盘（维护者约定一起量化分析；结论应沉淀进 FAQ 与 README 信任声明，并与"不用时反复重新解释业务的 token 开销"对比） | — |
 
 ## 处置原则（维护者拍板的产品判断，后续反馈处置须遵循）
 
