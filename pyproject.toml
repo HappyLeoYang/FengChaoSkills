@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fengchao-skills"
-version = "0.2.0"
+version = "0.2.1"
 description = "Agent 无关的项目业务事实账本：基于 Markdown + Git 的 AI 会话业务记忆工具包（零依赖、零遥测）"
 readme = "README.md"
 requires-python = ">=3.9"

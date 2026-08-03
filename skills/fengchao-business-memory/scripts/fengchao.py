@@ -21,7 +21,7 @@ import sys
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 
 # ---------------------------------------------------------------------------
 # 常量
@@ -958,7 +958,15 @@ MARKER_HOSTS = {
     "opencode": "AGENTS.md",
     "agents": "AGENTS.md",
 }
-HOOK_COMMAND_PREFIX = f"python3 {CLI_RELATIVE} hook "
+# hook 以会话 cwd 运行，cwd 可能在项目子目录：用 $CLAUDE_PROJECT_DIR 锚定项目根，
+# 变量缺失时回退 "."（等价旧行为）。双引号保证路径含空格时不炸（F-005）。
+HOOK_COMMAND_PREFIX = f'python3 "${{CLAUDE_PROJECT_DIR:-.}}/{CLI_RELATIVE}" hook '
+# 维护规则：HOOK_COMMAND_PREFIX 每次变更，旧值必须追加进 LEGACY_HOOK_COMMAND_PREFIXES
+# 且永不删除条目——remove_claude_hooks 必须能摘除任何历史版本写入的 hook（红线 6 卸载对称性）。
+LEGACY_HOOK_COMMAND_PREFIXES = (
+    f"python3 {CLI_RELATIVE} hook ",  # <= v0.2.0：裸相对路径，cwd 在子目录时失效（F-005）
+)
+ALL_HOOK_COMMAND_PREFIXES = (HOOK_COMMAND_PREFIX,) + LEGACY_HOOK_COMMAND_PREFIXES
 
 
 def agent_artifact_files(config: ProjectConfig, agent: str) -> "dict[str, str]":
@@ -983,6 +991,38 @@ def all_agent_artifact_paths() -> "list[str]":
     return paths
 
 
+def filter_fengchao_hooks(
+    entries: "list[dict]", keep_command: "str | None" = None
+) -> "tuple[list[dict], bool]":
+    """从 hook entries 中剥除本工具写入的条目（含全部历史格式）。
+
+    keep_command 非空时，与其精确相等的命令保留（register 幂等场景）。
+    返回 (保留的 entries, 是否有改动)。用户自有 hook 一律原样保留。
+    """
+    changed = False
+    kept_entries: "list[dict]" = []
+    for entry in entries:
+        entry_hooks = []
+        for hook in entry.get("hooks", []):
+            command = str(hook.get("command", ""))
+            ours = any(prefix in command for prefix in ALL_HOOK_COMMAND_PREFIXES)
+            if ours and command != keep_command:
+                changed = True
+                continue
+            entry_hooks.append(hook)
+        if entry_hooks:
+            if len(entry_hooks) != len(entry.get("hooks", [])):
+                entry = dict(entry)
+                entry["hooks"] = entry_hooks
+            kept_entries.append(entry)
+        elif entry.get("hooks"):
+            # 整条 entry 都是我们的 hook，摘除
+            changed = True
+        else:
+            kept_entries.append(entry)
+    return kept_entries, changed
+
+
 def register_claude_hooks(project: Path) -> bool:
     """向 .claude/settings.json 注册 SessionStart / Stop hooks（B1）。"""
     settings_path = project / ".claude" / "settings.json"
@@ -995,8 +1035,11 @@ def register_claude_hooks(project: Path) -> bool:
     hooks = data.setdefault("hooks", {})
     changed = False
     for event, sub in (("SessionStart", "session-start"), ("Stop", "stop-gate")):
-        entries = hooks.setdefault(event, [])
         command = HOOK_COMMAND_PREFIX + sub
+        # 先剥除历史格式条目：升级路径是"替换"而非"追加"（避免新旧 hook 并存重复触发）
+        entries, stripped = filter_fengchao_hooks(hooks.setdefault(event, []), keep_command=command)
+        hooks[event] = entries
+        changed = changed or stripped
         already = any(
             hook.get("command") == command
             for entry in entries
@@ -1025,24 +1068,8 @@ def remove_claude_hooks(project: Path) -> bool:
     changed = False
     for event in list(hooks.keys()):
         entries = hooks.get(event) or []
-        kept_entries = []
-        for entry in entries:
-            entry_hooks = [
-                hook
-                for hook in entry.get("hooks", [])
-                if HOOK_COMMAND_PREFIX not in str(hook.get("command", ""))
-            ]
-            if len(entry_hooks) != len(entry.get("hooks", [])):
-                changed = True
-            if entry_hooks:
-                entry = dict(entry)
-                entry["hooks"] = entry_hooks
-                kept_entries.append(entry)
-            elif entry.get("hooks"):
-                # 整条 entry 都是我们的 hook，摘除
-                changed = True
-            else:
-                kept_entries.append(entry)
+        kept_entries, event_changed = filter_fengchao_hooks(entries)
+        changed = changed or event_changed
         if kept_entries:
             hooks[event] = kept_entries
         else:
@@ -2634,9 +2661,35 @@ def read_hook_payload() -> dict:
         return {}
 
 
-def maintain_skeleton(config: ProjectConfig) -> str:
+def resolve_hook_project(cwd: Path) -> Path:
+    """hook 专用项目根解析（F-005）：宿主以会话 cwd 调起 hook，cwd 可能在项目子目录。
+
+    优先级：$CLAUDE_PROJECT_DIR（须真含 .fengchao/config.yaml 才采信）→ 从 cwd 向上
+    walk-up 查找 → 落回 cwd（维持"未初始化则静默空跑"纪律）。每层仅一次 stat，<500ms 无虞。
+    仅 hook 使用：init 必须保持 cwd 语义，其余命令在子目录明确报错是可诊断的失败。
+    """
+    env_root = os.environ.get("CLAUDE_PROJECT_DIR", "").strip()
+    if env_root:
+        candidate = Path(env_root).resolve()
+        if (candidate / ".fengchao" / "config.yaml").exists():
+            return candidate
+    current = cwd.resolve()
+    while True:
+        if (current / ".fengchao" / "config.yaml").exists():
+            return current
+        if current.parent == current:
+            return cwd
+        current = current.parent
+
+
+def cli_invocation(project: Path) -> str:
+    """给 AI 抄写的 CLI 调用前缀：绝对路径带引号，任意 cwd 下可执行（F-005）。"""
+    return f'python3 "{project / CLI_RELATIVE}"'
+
+
+def maintain_skeleton(project: Path, config: ProjectConfig) -> str:
     return (
-        f"python3 {CLI_RELATIVE} maintain \\\n"
+        f"{cli_invocation(project)} maintain \\\n"
         '  --title "<本次交付标题>" \\\n'
         '  --summary "<用户真实业务诉求>" \\\n'
         '  --implementation "<最终实现方案>" \\\n'
@@ -2647,6 +2700,7 @@ def maintain_skeleton(config: ProjectConfig) -> str:
 
 def hook_project(project: Path, args: argparse.Namespace) -> int:
     # hook 必须快（<500ms）且静默失败：任何异常不影响宿主 agent
+    project = resolve_hook_project(project)
     if not (project / ".fengchao" / "config.yaml").exists():
         return EXIT_OK
     config = load_config(project)
@@ -2660,12 +2714,12 @@ def hook_project(project: Path, args: argparse.Namespace) -> int:
             context = (
                 f"This project uses FengChao business memory. Read `{entry}` first and route "
                 f"the smallest necessary context via `{mmap}` (read the top 3 results first). "
-                f"After real development delivery run `python3 {CLI_RELATIVE} maintain ...`."
+                f"After real development delivery run `{cli_invocation(project)} maintain ...`."
             )
         else:
             context = (
                 f"本项目启用 FengChao 业务记忆：先读 `{entry}`，按 `{mmap}` 路由最小必要上下文"
-                f"（先读前 3 条）。真实开发交付后运行 `python3 {CLI_RELATIVE} maintain ...` 维护记忆。"
+                f"（先读前 3 条）。真实开发交付后运行 `{cli_invocation(project)} maintain ...` 维护记忆。"
             )
         print(
             json.dumps(
@@ -2693,7 +2747,7 @@ def hook_project(project: Path, args: argparse.Namespace) -> int:
         return EXIT_OK
     write_text(marker, today())
 
-    skeleton = maintain_skeleton(config)
+    skeleton = maintain_skeleton(project, config)
     if config.hook_mode == "strict":
         reason = (
             "FengChao stop-gate：检测到项目 git 变更，但当天没有 changelog 记录。"
@@ -2774,6 +2828,9 @@ def archive_project(project: Path, args: argparse.Namespace) -> int:
             archive_dir = directory / "archive"
             ensure_dir(archive_dir)
             # 归档文件深一层：相对链接补一级
+            # 注意：这里是"前缀追加"（文件下移一层，所有 ../ 统一加深一级），对指向记忆
+            # 内部与记忆根之外的链接都保真，与 migrate 的"剥除 ../"（仅内部目标合法，
+            # 见 F-003）不同构——不要当成同类 bug 改掉。
             text = read_text(record).replace("](../", "](../../")
             write_text(archive_dir / record.name, text)
             record.unlink()
@@ -3078,11 +3135,26 @@ def migrate_project(project: Path, args: argparse.Namespace) -> int:
     if fengwang_src.exists() and not any(fengwang_src.iterdir()):
         fengwang_src.rmdir()
 
-    # 链接改写：FENGWANG/memory-map 上移一层，../X → X；context 内指向 fengwang 的链接改指记忆根
+    # 链接改写：FENGWANG/memory-map 从 fengwang/ 上移到记忆根（同深度），只有指向被搬移
+    # 记忆目录的 ../ 需要剥掉；指向记忆根之外项目文件的链接（../docs/x.md 等）必须原样
+    # 保留（F-003：新旧位置深度相同，外部链接的 ../ 本就正确）。
+    internal_dirs = "|".join(
+        re.escape(d)
+        for d in (
+            config.context_dir,
+            config.task_dir,
+            config.changelog_dir,
+            config.plan_dir,
+            config.conversation_dir,
+        )
+    )
+    # 覆盖 markdown 链接 `](../x` 与反引号裸路径 `` `../x `` 两种形态；
+    # lookahead 要求目录名后紧跟 / ) ` #，防止 task-records-v2 之类前缀目录被误剥。
+    strip_internal_up = re.compile(r"(\]\(|`)\.\./(?=(?:" + internal_dirs + r")(?:[/)`#]))")
     for fname in ("FENGWANG.md", "memory-map.md"):
         path = root / fname
         if path.exists():
-            text = read_text(path).replace("](../", "](").replace("`../", "`")
+            text = strip_internal_up.sub(r"\1", read_text(path))
             write_text(path, text)
     context_root = root / config.context_dir
     if context_root.exists():

@@ -6,6 +6,7 @@
 
 import hashlib
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -19,10 +20,16 @@ sys.path.insert(0, str(CLI.parent))
 import fengchao  # noqa: E402  纯函数单测直接 import
 
 
-def run_cli(cwd, *args, check=True, stdin_text=None):
+def run_cli(cwd, *args, check=True, stdin_text=None, env=None):
+    # 默认剥离 CLAUDE_PROJECT_DIR：在 Claude Code 会话内跑测试时，该变量指向本仓库
+    # （仓库自身 dogfooding 有 .fengchao/），会让 hook 用例解析到仓库而非临时项目。
+    proc_env = {k: v for k, v in os.environ.items() if k != "CLAUDE_PROJECT_DIR"}
+    if env:
+        proc_env.update(env)
     result = subprocess.run(
         [sys.executable, str(CLI), *args],
         cwd=cwd,
+        env=proc_env,
         text=True,
         input=stdin_text,
         stdout=subprocess.PIPE,
@@ -565,6 +572,128 @@ class HookTests(unittest.TestCase):
             payload = json.loads(result.stdout)
             self.assertIn("FENGWANG.md", payload["hookSpecificOutput"]["additionalContext"])
 
+    def test_hook_command_registered_with_project_dir_variable(self):
+        """F-005：settings.json 中的 hook 命令用 $CLAUDE_PROJECT_DIR 锚定项目根。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+            run_cli(project, "init", "--project-name", "Demo", "--agents", "claude")
+            settings = json.loads((project / ".claude" / "settings.json").read_text())
+            for event, sub in (("SessionStart", "session-start"), ("Stop", "stop-gate")):
+                commands = [
+                    hook["command"]
+                    for entry in settings["hooks"][event]
+                    for hook in entry.get("hooks", [])
+                    if "fengchao" in str(hook.get("command", ""))
+                ]
+                self.assertEqual(commands, [fengchao.HOOK_COMMAND_PREFIX + sub])
+                self.assertIn("${CLAUDE_PROJECT_DIR:-.}", commands[0])
+
+    def test_session_start_resolves_root_from_env_in_subdir(self):
+        """F-005：cwd 在子目录时经 $CLAUDE_PROJECT_DIR 解析项目根，注入命令为绝对路径。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+            run_cli(project, "init", "--project-name", "Demo", "--agents", "claude")
+            subdir = project / "spikes" / "deep"
+            subdir.mkdir(parents=True)
+            result = run_cli(
+                subdir, "hook", "session-start", stdin_text="{}",
+                env={"CLAUDE_PROJECT_DIR": str(project)},
+            )
+            context = json.loads(result.stdout)["hookSpecificOutput"]["additionalContext"]
+            self.assertIn("FENGWANG.md", context)
+            # maintain 命令是绝对路径，AI 在任意 cwd 照抄可执行
+            self.assertIn(str(project.resolve() / fengchao.CLI_RELATIVE), context)
+
+    def test_stop_gate_walks_up_from_subdir_without_env(self):
+        """F-005：无环境变量时从 cwd 向上 walk-up 定位项目根，防重标记跨 cwd 共享。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+            run_git(project, "init")
+            run_cli(project, "init", "--project-name", "Demo", "--agents", "claude")
+            (project / "app.py").write_text("x = 1\n")
+            subdir = project / "spikes" / "spike2_engine"
+            subdir.mkdir(parents=True)
+            payload = json.dumps({"session_id": "s1"})
+            result = run_cli(subdir, "hook", "stop-gate", stdin_text=payload)
+            self.assertIn("maintain", result.stdout)
+            self.assertTrue((project / ".fengchao" / "tmp" / "stop-gate-s1").exists())
+            # 同会话换回项目根执行，防重标记命中，不再提醒
+            result = run_cli(project, "hook", "stop-gate", stdin_text=payload)
+            self.assertEqual("", result.stdout.strip())
+
+    def test_hook_outside_any_project_is_silent(self):
+        """F-005 回归：未初始化环境里 hook 保持静默空跑（rc=0、零输出）。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            subdir = Path(tmp) / "nested" / "dir"
+            subdir.mkdir(parents=True)
+            for event in ("session-start", "stop-gate"):
+                result = run_cli(subdir, "hook", event, stdin_text="{}")
+                self.assertEqual(0, result.returncode)
+                self.assertEqual("", result.stdout.strip())
+
+
+class HookUpgradeCompatTests(unittest.TestCase):
+    """v0.2.0 旧格式 hook 的升级替换与卸载对称性（F-005 LEGACY 清单，红线 6）。"""
+
+    @staticmethod
+    def _legacy_command(sub: str) -> str:
+        return f"python3 {fengchao.CLI_RELATIVE} hook {sub}"
+
+    def test_upgrade_replaces_legacy_hook_entries(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+            run_cli(project, "init", "--project-name", "Demo", "--agents", "claude")
+            settings_path = project / ".claude" / "settings.json"
+            legacy = {
+                "hooks": {
+                    "SessionStart": [
+                        {"hooks": [{"type": "command", "command": self._legacy_command("session-start"), "timeout": 10}]}
+                    ],
+                    "Stop": [
+                        {"hooks": [{"type": "command", "command": self._legacy_command("stop-gate"), "timeout": 10}]},
+                        {"hooks": [{"type": "command", "command": "echo hi"}]},
+                    ],
+                }
+            }
+            settings_path.write_text(json.dumps(legacy, ensure_ascii=False, indent=2) + "\n")
+            run_cli(project, "upgrade")
+            text = settings_path.read_text()
+            self.assertNotIn(f"python3 {fengchao.CLI_RELATIVE} hook ", text)
+            data = json.loads(text)
+            for event, sub in (("SessionStart", "session-start"), ("Stop", "stop-gate")):
+                ours = [
+                    hook["command"]
+                    for entry in data["hooks"][event]
+                    for hook in entry.get("hooks", [])
+                    if "fengchao" in str(hook.get("command", ""))
+                ]
+                # 旧条目被替换而非追加：恰好一条新格式
+                self.assertEqual(ours, [fengchao.HOOK_COMMAND_PREFIX + sub])
+            user_hooks = [
+                hook["command"]
+                for entry in data["hooks"]["Stop"]
+                for hook in entry.get("hooks", [])
+                if hook.get("command") == "echo hi"
+            ]
+            self.assertEqual(["echo hi"], user_hooks)
+
+    def test_disable_removes_legacy_format_hooks(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+            run_cli(project, "init", "--project-name", "Demo", "--agents", "claude")
+            settings_path = project / ".claude" / "settings.json"
+            legacy_only = {
+                "hooks": {
+                    "Stop": [
+                        {"hooks": [{"type": "command", "command": self._legacy_command("stop-gate"), "timeout": 10}]}
+                    ]
+                }
+            }
+            settings_path.write_text(json.dumps(legacy_only, ensure_ascii=False, indent=2) + "\n")
+            run_cli(project, "disable")
+            # 全部条目都是我们的 → 摘除后走 unlink 分支，文件消失
+            self.assertFalse(settings_path.exists())
+
 
 class ScaleLifecycleTests(unittest.TestCase):
     def test_archive_moves_records_and_keeps_links_valid(self):
@@ -651,10 +780,16 @@ class MigrateUpgradeTests(unittest.TestCase):
         (project / "changelog" / "CHANGELOG-INDEX.md").write_text("# changelog\n")
         (project / "plan-records" / "PLAN-INDEX.md").write_text("# plan\n")
         (project / "conversation-records" / "CONVERSATION-INDEX.md").write_text("# conv\n")
-        (project / "fengwang" / "FENGWANG.md").write_text("# 蜂王\n\n读 `../business-context/`。\n")
+        (project / "fengwang" / "FENGWANG.md").write_text(
+            "# 蜂王\n\n读 `../business-context/`。\n\n项目文档参考 `../docs/`。\n"
+        )
+        # memory-map 同时含指向记忆内部与记忆根之外（../docs/）的链接（F-003 场景）
+        (project / "docs").mkdir()
+        (project / "docs" / "业务文档.md").write_text("# 外部业务文档\n")
         (project / "fengwang" / "memory-map.md").write_text(
             "# Map\n\n| 类型 | 状态 | 领域 | 词 | 优先读取 | 说明 |\n|--|--|--|--|--|--|\n"
             "| task | implemented | general | 任务 | [2026-01-01_001_t.md](../task-records/2026-01-01_001_t.md) | 旧任务 |\n"
+            "| doc | current | general | 文档 | [业务文档.md](../docs/业务文档.md) | 记忆根外的项目文档 |\n"
         )
 
     def test_migrate_legacy_to_single_root(self):
@@ -669,7 +804,13 @@ class MigrateUpgradeTests(unittest.TestCase):
             self.assertTrue((project / "fengchao" / "task-records" / "2026-01-01_001_t.md").is_file())
             self.assertFalse((project / "fengwang").exists())
             memory_map = (project / "fengchao" / "memory-map.md").read_text()
+            # 内部链接剥掉 ../（上移一层后同级）
             self.assertIn("](task-records/2026-01-01_001_t.md)", memory_map)
+            # F-003：记忆根外链接的 ../ 原样保留（check 对根外断链静默跳过，必须比对内容）
+            self.assertIn("](../docs/业务文档.md)", memory_map)
+            fengwang_text = (project / "fengchao" / "FENGWANG.md").read_text()
+            self.assertIn("`business-context/`", fengwang_text)
+            self.assertIn("`../docs/`", fengwang_text)
             run_cli(project, "check")
 
     def test_upgrade_rewrites_tool_but_not_memory(self):
