@@ -9,10 +9,11 @@
 ## 当前业务规则
 
 ### 规则：记忆维护硬门禁
-- **规则**：真实交付的会话结束前必须存在当天 changelog 记录，由 Stop hook 按 hook_mode（remind/strict/off）执行门禁；校验类命令输出统一诊断信封（severity/code/message/target/fix）并遵守 0/1/2/130 退出码契约。
-- **场景**：启用 hooks 的项目完成真实代码修改后直接结束会话，agent 收到 remind 提示或 strict block；同一会话最多提醒一次；纯记忆目录变更零打扰。
-- **来源**：[2026-07-09_002_m2-可靠性内核：hooks-硬门禁与诊断契约.md](../../task-records/2026-07-09_002_m2-可靠性内核：hooks-硬门禁与诊断契约.md)
-- **生效**：2026-07-09
+- **规则**：记忆维护硬门禁在任意工作目录下生效：Stop/SessionStart hook 命令经 $CLAUDE_PROJECT_DIR 锚定项目根（缺失时回退旧相对路径行为），hook 子命令自身按 env→向上查找→cwd 解析项目根；真实交付的会话结束前必须存在当天 changelog 记录，按 hook_mode 三档执行；HOOK_COMMAND_PREFIX 每次变更必须把旧值追加进 LEGACY 清单且永不删除，保证任何历史版本写入的 hook 都能被对称摘除。
+- **场景**：AI 会话 cwd 在 monorepo 子包或 spikes/ 子目录时完成真实交付：stop-gate 照常提醒/阻塞，防重标记落在项目根且跨 cwd 共享；v0.2.0 存量项目跑 upgrade 后 settings.json 旧格式条目被替换为新格式各恰一条，disable 后无任何残留。
+- **来源**：[2026-08-02_001_v0.2.1：hook-任意-cwd-生效（f-005）.md](../../task-records/2026-08-02_001_v0.2.1：hook-任意-cwd-生效（f-005）.md)
+- **生效**：2026-08-02
+- **沿革**：[2026-07-09_002_m2-可靠性内核：hooks-硬门禁与诊断契约.md](../../task-records/2026-07-09_002_m2-可靠性内核：hooks-硬门禁与诊断契约.md)
 
 ## 已废除规则
 

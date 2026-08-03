@@ -4,6 +4,19 @@
 
 不会。路由输出是最小集合且有 4KB 字节预算（超限截断并提示细化查询词）；hook 是本地 Python 脚本，执行 < 500ms；全程零网络请求。
 
+## 会多消耗多少 tokens？（实测数据）
+
+很少，而且是可量化的（以下为 v0.2.1 实测，token 按 CJK 1 字/token、英文 3 字符/token 的保守上界折算）：
+
+| 注入项 | 时机 | 实测大小 | tokens 上界 |
+|--------|------|----------|-------------|
+| CLAUDE.md marker 块 | 每会话常驻 | 480 B | ≤ 154 |
+| SessionStart hook 注入 | 每会话一次 | 325 B | ≤ 105 |
+| `fengwang --query` 路由输出 | 按需查询 | 实测 1.1 KB（硬预算 4 KB） | 实测 ≤ 351（打满预算也 ≤ 约 1400） |
+| Stop hook 提醒（含 maintain 骨架） | 仅真实交付会话一次 | 501 B | ≤ 165 |
+
+即：**每会话固定开销 ≤ 约 260 tokens**（相当于一句多点的话）；新会话完整路由一次（读 FENGWANG.md 入口 + 一次查询 + 按需读前 3 条记录）约 1–2K tokens。对照组不是零——不用它时，每个新会话重新解释业务通常要几百到几千 tokens 的往返，还有 AI 猜错业务返工的开销。**只要路由让你少解释一句业务，本轮就回本了。**
+
 ## 记忆会不会泄露对话隐私？
 
 默认 summary-only：只保存萃取后的业务摘要，永不保存完整对话。记忆是仓库里的 Markdown，你可以像 review 代码一样 review 每一条记忆（见[团队协作](team-workflow.md)）。工具本身零遥测、零网络请求。
@@ -34,4 +47,4 @@
 
 ## 从旧版（六目录散在根下）怎么升级？
 
-`fengchao-skills migrate` 一键迁移到单一记忆根布局，自动改写所有相对链接并跑 check 验证；然后 `fengchao-skills upgrade` 刷新宿主注入。见[故障排查](troubleshooting.md)。
+`fengchao-skills migrate` 一键迁移到单一记忆根布局，自动改写指向记忆目录的相对链接（指向记忆根外项目文件的链接原样保留）并跑 check 验证；然后 `fengchao-skills upgrade` 刷新宿主注入。见[故障排查](troubleshooting.md)。

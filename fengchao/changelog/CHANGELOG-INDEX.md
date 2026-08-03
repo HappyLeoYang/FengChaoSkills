@@ -20,3 +20,5 @@
 | 2026-07-09 | `general` | R1 GitHub 开源上线 | `development` | [2026-07-09_006_r1-github-开源上线.md](2026-07-09_006_r1-github-开源上线.md) |
 | 2026-07-09 | `distribution` | R2 PyPI 发布准备：包名定为 fengchao-skills 并接入 Trusted Publishing 自动发布 | `development` | [2026-07-09_007_r2-pypi-发布准备：包名定为-fengchao-skills-并接入-trusted-publishing-自动发布.md](2026-07-09_007_r2-pypi-发布准备：包名定为-fengchao-skills-并接入-trusted-publishing-自动发布.md) |
 | 2026-07-09 | `general` | R2 完成：v0.2.0 经 Trusted Publishing 发布至 PyPI 并验收通过 | `development` | [2026-07-09_008_r2-完成：v0.2.0-经-trusted-publishing-发布至-pypi-并验收通过.md](2026-07-09_008_r2-完成：v0.2.0-经-trusted-publishing-发布至-pypi-并验收通过.md) |
+| 2026-08-02 | `reliability` | v0.2.1：hook 任意 cwd 生效（F-005） | `development` | [2026-08-02_001_v0.2.1：hook-任意-cwd-生效（f-005）.md](2026-08-02_001_v0.2.1：hook-任意-cwd-生效（f-005）.md) |
+| 2026-08-02 | `memory-model` | v0.2.1：migrate 链接改写边界修复（F-003）+ 安装文档与 token 实测 | `development` | [2026-08-02_002_v0.2.1：migrate-链接改写边界修复（f-003）+-安装文档与-token-实测.md](2026-08-02_002_v0.2.1：migrate-链接改写边界修复（f-003）+-安装文档与-token-实测.md) |

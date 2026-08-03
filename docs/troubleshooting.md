@@ -20,6 +20,15 @@
 
 失败时**没有任何文件被写入**，直接修正参数重跑即可。
 
+## hook 在子目录报错 / 门禁静默失效（v0.2.0 及更早）
+
+旧版 hook 命令用相对路径，当 AI 会话的工作目录在项目子目录（monorepo 子包、`spikes/` 等）时，
+要么报"找不到 `.fengchao/skill/scripts/fengchao.py`"，要么门禁无声跳过。v0.2.1 起 hook 命令经
+`$CLAUDE_PROJECT_DIR`（Claude Code 执行 hook 时注入）锚定项目根；`hook` 子命令自身也会从
+cwd 向上定位项目根（绝对路径手动调用在任意子目录同样生效）。处理：升级到 ≥ 0.2.1 后在
+**项目根**运行 `fengchao-skills upgrade`（或 `python3 .fengchao/skill/scripts/fengchao.py upgrade`）——
+它会把 `.claude/settings.json` 里的旧格式 hook 条目替换为新格式（不会重复追加）。
+
 ## Stop hook 一直提醒 / 从不提醒
 
 - 一直提醒：确认当天交付后是否真的跑了 `maintain`（lite 档也会写 changelog，写了就不再提醒）；同一会话只提醒一次，如果每个新会话都提醒，说明确实有未记账的变更。

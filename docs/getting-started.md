@@ -9,6 +9,7 @@ cd your-project
 
 # 推荐：免安装一次性运行
 uvx fengchao-skills init
+# 没有 uv？一次性安装：brew install uv（或直接用下面的源码方式，零前置依赖）
 
 # 或从源码（零依赖，任何有 Python 3.9+ 的机器都能跑）
 git clone https://github.com/HappyLeoYang/FengChaoSkills.git ~/FengChaoSkills

@@ -29,6 +29,7 @@ cd your-project
 
 # 方式一（推荐）：免安装一次性运行
 uvx fengchao-skills init     # 或 pipx run fengchao-skills init
+# 没有 uv？一次性安装：brew install uv（或直接用方式二，零前置依赖）
 
 # 方式二（当前可用）：git clone 后直接跑，零依赖
 git clone https://github.com/HappyLeoYang/FengChaoSkills.git ~/FengChaoSkills
@@ -92,7 +93,7 @@ uvx fengchao-skills uninstall --purge-memory   # 连记忆一起删，需要二�
 
 ## 支持的 Agent Surface
 
-Claude Code（薄入口 + 斜杠命令 + hooks 硬门禁）· Cursor（rule + 命令）· OpenCode（命令 + opencode.json）· Codex / 通用 Agents（AGENTS.md marker 块）。不用 Claude Code 也能用：五个 surface + 可选 git pre-commit 钩子兜底（`fengchao-skills install-git-hook`）。
+Claude Code（薄入口 + 斜杠命令 + hooks 硬门禁）· Cursor（rule + 命令）· OpenCode（命令 + opencode.json）· Codex / 通用 Agents（AGENTS.md marker 块）。不用 Claude Code 也能用：五个 surface + 可选 git pre-commit 钩子兜底（`fengchao-skills install-git-hook`）。任何读 `AGENTS.md` 的工具（Pi / Kimi Code / 智谱 ZCode 等）经通用 `agents` surface 开箱即用。
 
 ## 文档
 
@@ -106,6 +107,7 @@ Claude Code（薄入口 + 斜杠命令 + hooks 硬门禁）· Cursor（rule + �
 - **运行时零第三方依赖**：`fengchao.py` 只用 Python 标准库，目标项目无需安装任何东西。
 - **零遥测、零网络请求**：没有任何数据离开你的机器。
 - **记忆数据神圣**：任何命令（uninstall/upgrade/migrate/compact）都不会在无显式确认下删除或改写记忆内容。
+- **token 开销可量化**：每会话固定注入 ≤ 约 260 tokens，路由输出有 4KB 硬预算——实测数据见 [FAQ](docs/faq.md#会多消耗多少-tokens实测数据)。
 
 ## License
 

@@ -14,6 +14,12 @@
 - **来源**：[2026-07-09_003_m2-真相层-delta-语义合并与-maintain-分档.md](../../task-records/2026-07-09_003_m2-真相层-delta-语义合并与-maintain-分档.md)
 - **生效**：2026-07-09
 
+### 规则：migrate 链接改写边界
+- **规则**：migrate 迁移老布局时只改写指向记忆内部目录（business-context/task-records/changelog/plan-records/conversation-records）的相对链接；指向记忆根之外项目文件（docs/、ui/ 等）的链接必须原样保留——新旧位置同深度，外部 ../ 本就正确。
+- **场景**：老布局项目的 memory-map 同时含指向 `../task-records/x.md` 的任务链接与指向 `../docs/y.md` 的外部文档链接：migrate 后前者剥为 `task-records/x.md`、后者保持 `../docs/y.md`，收尾 check 零 broken_link；曾有真实项目 7 个外部链接被误剥需人工还原，修复后全自动。
+- **来源**：[2026-08-02_002_v0.2.1：migrate-链接改写边界修复（f-003）+-安装文档与-token-实测.md](../../task-records/2026-08-02_002_v0.2.1：migrate-链接改写边界修复（f-003）+-安装文档与-token-实测.md)
+- **生效**：2026-08-02
+
 ## 已废除规则
 
 （暂无）
