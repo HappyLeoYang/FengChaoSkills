@@ -22,3 +22,4 @@
 | 2026-07-09 | `general` | R2 完成：v0.2.0 经 Trusted Publishing 发布至 PyPI 并验收通过 | `development` | [2026-07-09_008_r2-完成：v0.2.0-经-trusted-publishing-发布至-pypi-并验收通过.md](2026-07-09_008_r2-完成：v0.2.0-经-trusted-publishing-发布至-pypi-并验收通过.md) |
 | 2026-08-02 | `reliability` | v0.2.1：hook 任意 cwd 生效（F-005） | `development` | [2026-08-02_001_v0.2.1：hook-任意-cwd-生效（f-005）.md](2026-08-02_001_v0.2.1：hook-任意-cwd-生效（f-005）.md) |
 | 2026-08-02 | `memory-model` | v0.2.1：migrate 链接改写边界修复（F-003）+ 安装文档与 token 实测 | `development` | [2026-08-02_002_v0.2.1：migrate-链接改写边界修复（f-003）+-安装文档与-token-实测.md](2026-08-02_002_v0.2.1：migrate-链接改写边界修复（f-003）+-安装文档与-token-实测.md) |
+| 2026-08-10 | `memory-model` | v0.2.2：maintain 来源链接补全（F-006） | `development` | [2026-08-10_001_v0.2.2：maintain-来源链接补全（f-006）.md](2026-08-10_001_v0.2.2：maintain-来源链接补全（f-006）.md) |

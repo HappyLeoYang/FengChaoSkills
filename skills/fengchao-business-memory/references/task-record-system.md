@@ -17,6 +17,16 @@
 - Evidence: changed files, tests, logs, commands, manual verification.
 - Risks or follow-ups.
 
+## Source Links (`--from-plan` / `--from-conversation`)
+
+Pass the record the delivery came from so the task record links back to it. Three forms are accepted and all normalize to the same memory-root-relative path:
+
+- bare record name — `2026-01-01_001_review-roles`
+- memory-root relative — `conversation-records/2026-01-01_001_review-roles.md`
+- project-root relative — `fengchao/conversation-records/2026-01-01_001_review-roles.md`
+
+The CLI fills in the missing directory segment (`plan-records/` or `conversation-records/`) and the `.md` suffix. A value starting with `../` is treated as an explicit reference outside the memory root and is kept verbatim.
+
 ## Immutability
 
 Do not rewrite old task records to update current truth. If a previous understanding becomes wrong, create a new task record and update `business-context/` to the latest truth with links to both records if useful.

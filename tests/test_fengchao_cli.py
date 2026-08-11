@@ -918,6 +918,77 @@ class PlanConversationTests(unittest.TestCase):
             run_cli(project, "check")
 
 
+class SourceLinkTests(unittest.TestCase):
+    """F-006：--from-plan/--from-conversation 三种写法都必须产出可解析链接。"""
+
+    def test_bare_name_and_full_path_both_link_correctly(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+            run_cli(project, "init", "--project-name", "Demo", "--memory-only")
+            run_cli(
+                project, "conversation",
+                "--title", "审核角色业务解释", "--domain", "design",
+                "--summary", "用户解释主管和经理审核的业务边界。",
+            )
+            run_cli(
+                project, "plan",
+                "--title", "审核流程优化计划", "--domain", "design",
+                "--goal", "用户希望调整审核流程。", "--plan", "拆成两级。",
+            )
+            conv_name = next(
+                p.stem for p in (project / "fengchao" / "conversation-records").glob("*_审核角色业务解释.md")
+            )
+            plan_name = next(
+                p.stem for p in (project / "fengchao" / "plan-records").glob("*_审核流程优化计划.md")
+            )
+
+            # 写法一：裸记录名（F-006 原缺陷写法）
+            run_cli(
+                project, "maintain",
+                "--title", "裸名来源", "--summary", "s", "--implementation", "i",
+                "--domain", "design", "--with-task-record",
+                "--from-conversation", conv_name,
+                "--from-plan", plan_name,
+            )
+            # 写法二：记忆根相对完整路径
+            run_cli(
+                project, "maintain",
+                "--title", "完整路径来源", "--summary", "s", "--implementation", "i",
+                "--domain", "design", "--with-task-record",
+                "--from-conversation", f"conversation-records/{conv_name}.md",
+            )
+            # 写法三：项目根相对路径（含记忆根前缀）
+            run_cli(
+                project, "maintain",
+                "--title", "项目根相对来源", "--summary", "s", "--implementation", "i",
+                "--domain", "design", "--with-task-record",
+                "--from-conversation", f"fengchao/conversation-records/{conv_name}.md",
+            )
+
+            task_dir = project / "fengchao" / "task-records"
+            bare = next(task_dir.glob("*_裸名来源.md")).read_text()
+            self.assertIn(f"](../conversation-records/{conv_name}.md)", bare)
+            self.assertIn(f"](../plan-records/{plan_name}.md)", bare)
+            for pattern in ("*_完整路径来源.md", "*_项目根相对来源.md"):
+                doc = next(task_dir.glob(pattern)).read_text()
+                self.assertIn(f"](../conversation-records/{conv_name}.md)", doc)
+
+            # 三种写法都不得留下断链
+            run_cli(project, "check")
+
+    def test_external_reference_keeps_dotdot_prefix(self):
+        """记忆根外引用（../docs/...）是调用方显式指定，不补目录段也不补后缀。"""
+        config = fengchao.ProjectConfig(project_name="Demo")
+        self.assertEqual(
+            fengchao.normalize_memory_relative(["../docs/业务文档.md"], config, config.plan_dir),
+            ["../docs/业务文档.md"],
+        )
+        self.assertEqual(
+            fengchao.normalize_memory_relative(["2026-01-01_001_x"], config, config.plan_dir),
+            ["plan-records/2026-01-01_001_x.md"],
+        )
+
+
 class GitHookTests(unittest.TestCase):
     def test_install_and_remove_pre_commit_hook(self):
         with tempfile.TemporaryDirectory() as tmp:

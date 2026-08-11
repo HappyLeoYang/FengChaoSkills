@@ -20,6 +20,12 @@
 - **来源**：[2026-08-02_002_v0.2.1：migrate-链接改写边界修复（f-003）+-安装文档与-token-实测.md](../../task-records/2026-08-02_002_v0.2.1：migrate-链接改写边界修复（f-003）+-安装文档与-token-实测.md)
 - **生效**：2026-08-02
 
+### 规则：maintain 来源链接归一契约
+- **规则**：maintain 的 --from-plan/--from-conversation 接受裸记录名、记忆根相对路径、项目根相对路径三种写法，CLI 统一归一为记忆根相对完整路径：剥记忆根前缀后，值内不含 / 时补默认目录段（plan-records/ 或 conversation-records/），无 .md 时补后缀；以 ../ 开头的视为调用方显式指定的记忆根外引用，原样保留不做任何补全。
+- **场景**：传裸名 2026-08-10_001_测试对话 时 task-record 生成 ](../conversation-records/2026-08-10_001_测试对话.md) 且 check 零 broken_link；传 conversation-records/x.md 与 fengchao/conversation-records/x.md 结果一致；传 ../docs/业务文档.md 保持原样。
+- **来源**：[2026-08-10_001_v0.2.2：maintain-来源链接补全（f-006）.md](../../task-records/2026-08-10_001_v0.2.2：maintain-来源链接补全（f-006）.md)
+- **生效**：2026-08-10
+
 ## 已废除规则
 
 （暂无）

@@ -50,6 +50,8 @@ python3 .fengchao/skill/scripts/fengchao.py maintain --title "..." --summary "..
 # full delivery (business rule changed):
 python3 .fengchao/skill/scripts/fengchao.py maintain --title "..." --summary "..." --implementation "..." \
   --business-change "..." --change-kind added|modified|removed --rule-name "..." --scenario "..."
+# link back to the source record — bare name, memory-root relative, or project-root relative all work:
+python3 .fengchao/skill/scripts/fengchao.py maintain ... --from-conversation "2026-01-01_001_review-roles"
 python3 .fengchao/skill/scripts/fengchao.py check          # --warn / --strict / --format json
 python3 .fengchao/skill/scripts/fengchao.py status         # health overview, --format json
 ```

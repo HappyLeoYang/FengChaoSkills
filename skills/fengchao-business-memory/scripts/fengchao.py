@@ -21,7 +21,7 @@ import sys
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 
-__version__ = "0.2.1"
+__version__ = "0.2.2"
 
 # ---------------------------------------------------------------------------
 # 常量
@@ -1448,13 +1448,29 @@ def bullet_list(items: "list[str]") -> str:
     return "\n".join(f"- {item}" for item in items)
 
 
-def normalize_memory_relative(paths: "list[str] | None", config: ProjectConfig) -> "list[str]":
-    """--from-plan/--from-conversation 允许传项目根相对路径，统一剥离记忆根前缀。"""
+def normalize_memory_relative(
+    paths: "list[str] | None",
+    config: ProjectConfig,
+    default_dir: str = "",
+) -> "list[str]":
+    """把 --from-plan/--from-conversation 的来源写法归一为记忆根相对完整路径。
+
+    接受三种写法：裸记录名、记忆根相对路径、项目根相对路径。依次剥离记忆根前缀、
+    补默认目录段（值内不含 `/` 时）、补 `.md` 后缀，保证 task-record 里生成的相对
+    链接可解析（F-006：裸记录名曾产出 `../<名字>` 断链，check 报 broken_link）。
+    以 `../` 开头的视为调用方显式指定的记忆根外引用，原样保留（同 F-003 边界纪律）。
+    """
     prefix = config.memory_root + "/" if config.memory_root else ""
     normalized: "list[str]" = []
     for item in optional_list(paths):
+        item = item.strip()
         if prefix and item.startswith(prefix):
             item = item[len(prefix):]
+        if not item.startswith("../"):
+            if default_dir and "/" not in item:
+                item = f"{default_dir}/{item}"
+            if not item.endswith(".md"):
+                item = f"{item}.md"
         normalized.append(item)
     return normalized
 
@@ -2318,9 +2334,11 @@ def maintain_project(project: Path, args: argparse.Namespace) -> int:
     write_if_missing(layout.task_dir / "TASK-INDEX.md", task_index_template(config))
     write_if_missing(layout.changelog_dir / "CHANGELOG-INDEX.md", changelog_index_template(config))
 
-    # 来源链接统一为记忆根相对路径（项目根相对写法也接受）
-    args.from_plan = normalize_memory_relative(args.from_plan, config)
-    args.from_conversation = normalize_memory_relative(args.from_conversation, config)
+    # 来源链接统一为记忆根相对完整路径（裸记录名、记忆根相对、项目根相对写法都接受）
+    args.from_plan = normalize_memory_relative(args.from_plan, config, config.plan_dir)
+    args.from_conversation = normalize_memory_relative(
+        args.from_conversation, config, config.conversation_dir
+    )
 
     task_path = next_record_path(layout.task_dir, args.title) if write_task else None
     changelog_path = next_record_path(layout.changelog_dir, args.title)
