@@ -8,6 +8,7 @@
 business-context/
   CONTEXT-INDEX.md
   domains/
+  project-facts.md
   impact-matrix.md
   debt-registry.md
 ```
@@ -28,6 +29,32 @@ Each domain file keeps two managed sections: `## 当前业务规则` (current ru
 ```
 
 Never edit these sections by hand: they are maintained exclusively by `maintain --business-change --change-kind added|modified|removed --rule-name ...` so that one rule name always has exactly one active entry. Terms, preferences, pitfalls, and rejected options do NOT use this format — they live in conversation-records and the debt registry.
+
+## project-facts.md
+
+Registers discrete project facts the user asserted with certainty in conversation: entry points, config
+values, term anchors, code conventions. It answers "what is X in this project" — **not** "what rule governs
+X", which belongs in a domain file.
+
+```markdown
+### 事实：设计单提交审核入口
+- **类别**：entry-point
+- **事实**：POST /liangang/workorder/submitReview
+- **来源**：[对话记录链接]
+- **更新**：YYYY-MM-DD
+- **沿革**：[历任旧来源链接，最近的在前]
+```
+
+Same discipline as domain rules: the fact name is a stable key, at most one active entry per name, and the
+section is maintained exclusively by `conversation --confirmed-fact` / `--retire-fact`. Never edit by hand.
+
+Two limits worth stating plainly:
+
+- **Facts are clues, not guarantees.** `check` does not verify them against source code — the CLI is
+  dependency-free and language-agnostic by design. When a registered fact contradicts the code, the code
+  wins; tell the user the registration is stale.
+- **Scope stops at the mapping.** Register "business name ↔ where it lives". Do not record parameters,
+  field lists, or return shapes — that is a second-rate copy of API docs and will rot faster than it helps.
 
 ## CONTEXT-INDEX.md
 

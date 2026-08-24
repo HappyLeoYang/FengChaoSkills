@@ -13,6 +13,7 @@
 | v1.1 | 2026-07-07 | 合并 OpenSpec 专项调研结论：新增 B4 真相层 delta 语义合并（替代原冲突检测方案）、B5 maintain 分档、A4 薄命令、B2 升级为 agent 契约、C1 增加预算管制、M1 增加 dogfooding；新增第六部分借鉴决议、附录 B 规则条目格式规范、附录 C 诊断契约；新增红线 9 |
 | v1.2 | 2026-07-09 | 蓝图 → 现状：M1–M4 全部开发任务已实现并通过测试（v0.2.0），新增第七部分实施状态；1.6 的现状盘点保留作为历史记录，其所列缺失项均已解决 |
 | v1.3 | 2026-07-09 | R2 核查：PyPI 名 `fengchao` 已被占用，包名与 console script 定为 `fengchao-skills`（决策记录见 release-plan.md 第 10 条），同步 D4 与 4.2/4.4 的安装命令 |
+| v1.4 | 2026-08-23 | F-007 确凿事实登记（v0.3.0）：新增第六种记忆模式与 `business-context/project-facts.md` 受管文件；`conversation --confirmed-fact/--retire-fact` 打通"用户明确确认"这条既有晋升路径的写入通道；红线 9 扩展覆盖事实名，新增红线 10（确凿性门槛）；附录 C 登记 `invalid_fact_format`/`fact_not_found` |
 
 ---
 
@@ -490,7 +491,8 @@ uvx fengchao-skills uninstall
 6. **卸载对称性**：每一个写入用户项目的字节，都必须有对应的干净摘除路径。
 7. **写入触发边界**：只有真实开发交付才写证据层——这条业务规则高于任何"自动化便利"。
 8. **克制**：工具只保证格式、校验与提醒；业务判断永远留给 agent 和人。
-9. **真相层唯一现行原则**：business-context 中同一规则名在同一时刻只能有一个现行条目；任何写入路径（maintain/migrate/未来功能）都必须经过 B4 的语义合并，禁止绕过合并直接追加规则。
+9. **真相层唯一现行原则**：business-context 中同一规则名在同一时刻只能有一个现行条目；任何写入路径（maintain/migrate/未来功能）都必须经过 B4 的语义合并，禁止绕过合并直接追加规则。**F-007 起，`project-facts.md` 的事实名同受本条约束**：同一事实名只有一条现行值，只能由 `conversation --confirmed-fact` / `--retire-fact` 维护。
+10. **确凿性门槛**（F-007）：写入真相层的事实必须来自**用户的确凿断言**，不是 AI 从源码反推的结论。代码告诉你系统"做了什么"，不告诉你业务"要什么"——一处校验可能是规则、可能是防御性遗留、也可能是 bug。AI 的代码阅读结论一律先落 `conversation-records` 的未验证段或 `--promote candidate`，经用户确认后才可登记。放弃这条，业务记忆就退化成"AI 猜的代码摘要"。
 
 ---
 
@@ -660,6 +662,8 @@ uvx fengchao-skills uninstall
 | `missing_changelog_for_changes` | error/warning | 同上 | 有项目 git 变更但当天无 changelog |
 | `rule_already_exists` | error | maintain (B4 added) | 规则名已存在，应用 modified 或换名 |
 | `rule_not_found` | error | maintain (B4 modified/removed) | 规则名不存在，附最相近候选清单 |
+| `invalid_fact_format` | error | conversation (F-007 `--confirmed-fact`) | 事实入参不是 `名称=值` 格式 |
+| `fact_not_found` | error | conversation (F-007 `--retire-fact`) | 待废除的事实名不存在，附最相近候选清单 |
 | `memory_map_row_too_long` | warning | check | memory-map 行超过长度上限（C1） |
 | `orphan_record` | warning | doctor | 记录文件不在任何索引中 |
 | `index_dead_row` | warning | doctor | 索引行指向已归档/移动的记录且未更新 |

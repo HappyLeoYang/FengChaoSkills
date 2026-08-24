@@ -21,7 +21,7 @@ import sys
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 
-__version__ = "0.2.2"
+__version__ = "0.3.0"
 
 # ---------------------------------------------------------------------------
 # 常量
@@ -65,10 +65,14 @@ AGENT_COMMAND_PATHS = {
 RECORD_FILE_RE = re.compile(r"^(\d{4}-\d{2}-\d{2})_(\d{3})_.+\.md$")
 LINK_RE = re.compile(r"\[[^\]]+\]\((?!https?://|#|mailto:)([^)]+)\)")
 RULE_HEADING_RE = re.compile(r"^###\s+(?:规则：|Rule:\s*)(.+?)\s*$")
+FACT_HEADING_RE = re.compile(r"^###\s+(?:事实：|Fact:\s*)(.+?)\s*$")
 LEGACY_CONTEXT_ENTRY_RE = re.compile(r"^##\s+\d{4}-\d{2}-\d{2}\s+已落地业务事实\s*$")
 
 CURRENT_RULES_TITLES = ("## 当前业务规则", "## Current Business Rules")
 RETIRED_RULES_TITLES = ("## 已废除规则", "## Retired Rules")
+CURRENT_FACTS_TITLES = ("## 现行事实", "## Current Facts")
+RETIRED_FACTS_TITLES = ("## 已失效事实", "## Retired Facts")
+PROJECT_FACTS_FILE = "project-facts.md"
 
 # C1 预算管制：memory-map 单行 keywords 列字符上限 / fengwang 输出字节预算
 KEYWORDS_MAX_CHARS = 120
@@ -508,6 +512,52 @@ To fill in: what this domain depends on and impacts.
 """
 
 
+EMPTY_FACTS_PLACEHOLDER_ZH = (
+    "（暂无现行事实。用户在对话中用确凿语气断言项目事实后，"
+    "由 `conversation --confirmed-fact` 写入，同名事实始终只有一条现行值。）"
+)
+EMPTY_FACTS_PLACEHOLDER_EN = (
+    "(No active facts yet. `conversation --confirmed-fact` writes entries here after the user "
+    "asserts a project fact; one fact name always keeps exactly one active value.)"
+)
+
+
+def project_facts_template(config: ProjectConfig, date: "str | None" = None) -> str:
+    """项目事实登记表：入口、配置、术语锚点、代码约定等确凿事实的唯一现行值。"""
+    date = date or today()
+    if is_en(config):
+        return f"""# Project Facts
+
+> Confirmed project facts asserted by the user: entry points, config values, term anchors, code
+> conventions. One fact name is a stable key — at most one active value at any moment.
+> Anchors are clues, not guarantees: they are never re-verified against source code.
+> Last updated: {date}
+
+## Current Facts
+
+{EMPTY_FACTS_PLACEHOLDER_EN}
+
+## Retired Facts
+
+{EMPTY_RETIRED_PLACEHOLDER_EN}
+"""
+    return f"""# 项目事实登记
+
+> 记录用户在对话中确凿断言的项目事实：系统入口、关键配置、术语锚点、代码约定等。
+> 一个事实名是稳定 key，同一时刻只有一条现行值；旧值移入「已失效事实」段。
+> 注意：事实锚点是线索不是保证，本文件不与源码自动校验，接口改名或配置调整后需人工更新。
+> 最后更新：{date}
+
+## 现行事实
+
+{EMPTY_FACTS_PLACEHOLDER_ZH}
+
+## 已失效事实
+
+{EMPTY_RETIRED_PLACEHOLDER_ZH}
+"""
+
+
 def impact_matrix_template(config: ProjectConfig) -> str:
     if is_en(config):
         return """# Change Impact Matrix
@@ -732,6 +782,7 @@ def memory_map_template(config: ProjectConfig, date: "str | None" = None) -> str
 | Type | Status | Domain | Keywords | Read First | Notes |
 |------|--------|--------|----------|------------|-------|
 | context | current | general | project context business current truth | [CONTEXT-INDEX.md]({config.context_dir}/CONTEXT-INDEX.md) | Current business context entry |
+| fact | current | general | fact entry point api config term convention constant | [{PROJECT_FACTS_FILE}]({config.context_dir}/{PROJECT_FACTS_FILE}) | User-confirmed project facts |
 | task | historical | general | task development landed implementation | [TASK-INDEX.md]({config.task_dir}/TASK-INDEX.md) | Landed task entry |
 | changelog | historical | general | changelog change history code | [CHANGELOG-INDEX.md]({config.changelog_dir}/CHANGELOG-INDEX.md) | Change history entry |
 | plan | proposed | general | plan proposal design | [PLAN-INDEX.md]({config.plan_dir}/PLAN-INDEX.md) | Plan record entry |
@@ -745,6 +796,7 @@ def memory_map_template(config: ProjectConfig, date: "str | None" = None) -> str
 | 类型 | 状态 | 领域 | 触发词/线索 | 优先读取 | 说明 |
 |------|------|------|-------------|----------|------|
 | context | current | general | 项目 上下文 业务 当前事实 | [CONTEXT-INDEX.md]({config.context_dir}/CONTEXT-INDEX.md) | 当前业务上下文入口 |
+| fact | current | general | 事实 入口 接口 配置 术语 约定 常量 | [{PROJECT_FACTS_FILE}]({config.context_dir}/{PROJECT_FACTS_FILE}) | 用户确认的项目事实登记 |
 | task | historical | general | 任务 开发 落地 实现 | [TASK-INDEX.md]({config.task_dir}/TASK-INDEX.md) | 已落地任务入口 |
 | changelog | historical | general | changelog 变更 历史 代码 | [CHANGELOG-INDEX.md]({config.changelog_dir}/CHANGELOG-INDEX.md) | 变更历史入口 |
 | plan | proposed | general | plan 计划 方案 设计 | [PLAN-INDEX.md]({config.plan_dir}/PLAN-INDEX.md) | 计划记录入口 |
@@ -1216,6 +1268,7 @@ def memory_scaffold_files(config: ProjectConfig, layout: Layout) -> "dict[Path, 
         layout.fengwang_dir / "memory-map.md": memory_map_template(config),
         layout.context_dir / "CONTEXT-INDEX.md": context_index_template(config),
         layout.context_dir / "domains" / "domain-general.md": domain_template(config),
+        layout.context_dir / PROJECT_FACTS_FILE: project_facts_template(config),
         layout.context_dir / "impact-matrix.md": impact_matrix_template(config),
         layout.context_dir / "debt-registry.md": debt_registry_template(config),
         layout.task_dir / "TASK-INDEX.md": task_index_template(config),
@@ -1913,6 +1966,50 @@ def update_memory_map(
     append_index_row(memory_map, row)
 
 
+def upsert_memory_map_row(
+    layout: Layout,
+    config: ProjectConfig,
+    *,
+    record_type: str,
+    status: str,
+    domain: str,
+    keywords: str,
+    record_path: Path,
+    description: str,
+) -> None:
+    """受管文件（project-facts.md）的 memory-map 行必须幂等：同一目标只保留一行。
+
+    与 update_memory_map 的 append 语义相反——事实登记会反复写同一个文件，追加会让
+    memory-map 长出 N 行指向同一目标，污染路由。已有行则就地替换并累积触发词。
+    """
+    memory_map = layout.fengwang_dir / "memory-map.md"
+    if not memory_map.exists():
+        write_text(memory_map, memory_map_template(config))
+    target = os.path.relpath(record_path, memory_map.parent)
+    link = f"[{record_path.name}]({target})"
+    text = read_text(memory_map)
+
+    lines = text.splitlines(keepends=True)
+    replaced = False
+    for idx, line in enumerate(lines):
+        if not (line.strip().startswith("|") and f"]({target})" in line):
+            continue
+        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+        if len(cells) < 6:
+            continue
+        if replaced:
+            lines[idx] = ""  # 历史遗留的重复行一并收敛掉
+            continue
+        # 累积旧触发词（新词在前），仍受 collect_keywords 的双重上限管制
+        merged = collect_keywords(keywords, cells[3])
+        lines[idx] = f"| {record_type} | {status} | {domain} | {merged} | {link} | {description} |\n"
+        replaced = True
+    if replaced:
+        write_text(memory_map, "".join(lines))
+    else:
+        append_index_row(memory_map, f"| {record_type} | {status} | {domain} | {keywords} | {link} | {description} |\n")
+
+
 # ---------------------------------------------------------------------------
 # B4：真相层 delta 语义合并（红线 9：同一规则同一时刻只有一个现行条目）
 # ---------------------------------------------------------------------------
@@ -1929,14 +2026,19 @@ def find_section(lines: "list[str]", titles: "tuple[str, ...]") -> "tuple[int, i
     return -1, -1
 
 
-def parse_rule_blocks(lines: "list[str]", start: int, end: int) -> "dict[str, tuple[int, int]]":
-    """解析段内 `### 规则：<名>` 块，返回 规则名 → (块起始行, 块结束行)。"""
+def parse_rule_blocks(
+    lines: "list[str]", start: int, end: int, heading_re: "re.Pattern[str]" = RULE_HEADING_RE
+) -> "dict[str, tuple[int, int]]":
+    """解析段内 `### 规则：<名>` 块，返回 规则名 → (块起始行, 块结束行)。
+
+    heading_re 可换成 FACT_HEADING_RE 以复用于项目事实登记（同构的稳定 key 语义）。
+    """
     blocks: "dict[str, tuple[int, int]]" = {}
     idx = start + 1
     current_name = ""
     current_start = -1
     while idx < end:
-        match = RULE_HEADING_RE.match(lines[idx])
+        match = heading_re.match(lines[idx])
         if match:
             if current_name:
                 blocks[current_name] = (current_start, idx)
@@ -2104,6 +2206,190 @@ def merge_domain_rule(
         cur_start, cur_end = find_section(lines, CURRENT_RULES_TITLES)
         insert_at = cur_end if cur_start != -1 else len(lines)
         lines[insert_at:insert_at] = ["", RETIRED_RULES_TITLES[1 if en else 0], "", retired_line]
+    else:
+        body = [
+            line for line in lines[ret_start + 1 : ret_end]
+            if line.strip() not in (EMPTY_RETIRED_PLACEHOLDER_ZH, EMPTY_RETIRED_PLACEHOLDER_EN)
+        ]
+        while body and not body[-1].strip():
+            body.pop()
+        new_body = body + [retired_line] if body else ["", retired_line]
+        if new_body[-1].strip():
+            new_body.append("")
+        lines = lines[: ret_start + 1] + new_body + lines[ret_end:]
+    return "\n".join(lines) + ("\n" if text.endswith("\n") or not text else ""), diagnostics
+
+
+# ---------------------------------------------------------------------------
+# F-007：项目事实登记合并（与红线 9 同构——一个事实名只有一条现行值）
+# ---------------------------------------------------------------------------
+
+
+DEFAULT_FACT_KIND = "general"
+
+
+def extract_field_value(lines: "list[str]", field_markers: "tuple[str, ...]") -> str:
+    """取条目中某个 `- **字段**：值` 行的值；找不到返回空串。"""
+    for line in lines:
+        for marker in field_markers:
+            if marker in line:
+                _, _, value = line.partition("：" if "：" in line else ":")
+                return value.strip()
+    return ""
+
+
+def parse_confirmed_fact(raw: str) -> "tuple[str, str] | None":
+    """解析 `名称=值` 入参；名称不含 `=`，值可以含（如 URL 查询串）。"""
+    if "=" not in (raw or ""):
+        return None
+    name, _, value = raw.partition("=")
+    name, value = name.strip(), value.strip()
+    if not name or not value:
+        return None
+    return name, value
+
+
+def render_fact_block(
+    *,
+    name: str,
+    value: str,
+    kind: str,
+    source_link: str,
+    date: str,
+    history_links: "list[str]",
+    en: bool,
+) -> "list[str]":
+    """渲染事实条目；沿革仅在覆盖旧值后存在（保链不保文，与规则条目同构）。"""
+    if en:
+        lines = [
+            f"### Fact: {name}",
+            f"- **Kind**：{kind}",
+            f"- **Value**：{value}",
+            f"- **Source**：{source_link}",
+            f"- **Updated**：{date}",
+        ]
+        if history_links:
+            lines.append(f"- **History**：{'、'.join(history_links)}")
+    else:
+        lines = [
+            f"### 事实：{name}",
+            f"- **类别**：{kind}",
+            f"- **事实**：{value}",
+            f"- **来源**：{source_link}",
+            f"- **更新**：{date}",
+        ]
+        if history_links:
+            lines.append(f"- **沿革**：{'、'.join(history_links)}")
+    return lines
+
+
+def merge_project_fact(
+    text: str,
+    *,
+    name: str,
+    value: str,
+    kind: str,
+    source_label: str,
+    source_link: str,
+    date: str,
+    en: bool = False,
+) -> "tuple[str, list[Diagnostic], str]":
+    """登记一条确凿事实：同名则覆盖（旧来源转入沿革），否则新增。
+
+    返回 (新文本, 诊断, 动作)，动作为 added/updated。与 maintain 不同，事实登记的
+    added/updated 由稳定 key 自动判定——事实名相同就是同一件事，不需要调用方指明。
+    """
+    diagnostics: "list[Diagnostic]" = []
+    lines = text.splitlines()
+    link = f"[{source_label}]({source_link})"
+
+    sec_start, sec_end = find_section(lines, CURRENT_FACTS_TITLES)
+    if sec_start == -1:
+        if lines and lines[-1].strip():
+            lines.append("")
+        lines.append(CURRENT_FACTS_TITLES[1 if en else 0])
+        lines.append("")
+        sec_start = len(lines) - 2
+        sec_end = len(lines)
+
+    blocks = parse_rule_blocks(lines, sec_start, sec_end, FACT_HEADING_RE)
+
+    if name in blocks:
+        block_start, block_end = blocks[name]
+        old_block = lines[block_start:block_end]
+        old_source = extract_links_from_lines(old_block, ("**来源**", "**Source**"))
+        old_history = extract_links_from_lines(old_block, ("**沿革**", "**History**"))
+        # 未显式指定类别时沿用旧类别，避免覆盖值时把分类静默洗成 general
+        if kind == DEFAULT_FACT_KIND:
+            kind = extract_field_value(old_block, ("**类别**", "**Kind**")) or kind
+        block = render_fact_block(
+            name=name, value=value, kind=kind, source_link=link,
+            date=date, history_links=old_source + old_history, en=en,
+        )
+        while block_end > block_start and not lines[block_end - 1].strip():
+            block_end -= 1
+        lines = lines[:block_start] + block + lines[block_end:]
+        action = "updated"
+    else:
+        block = render_fact_block(
+            name=name, value=value, kind=kind, source_link=link,
+            date=date, history_links=[], en=en,
+        )
+        body = [
+            line for line in lines[sec_start + 1 : sec_end]
+            if line.strip() not in (EMPTY_FACTS_PLACEHOLDER_ZH, EMPTY_FACTS_PLACEHOLDER_EN)
+        ]
+        while body and not body[-1].strip():
+            body.pop()
+        lines = lines[: sec_start + 1] + body + ["", *block, ""] + lines[sec_end:]
+        action = "added"
+    return "\n".join(lines) + ("\n" if text.endswith("\n") or not text else ""), diagnostics, action
+
+
+def retire_project_fact(
+    text: str,
+    *,
+    name: str,
+    source_label: str,
+    source_link: str,
+    date: str,
+    en: bool = False,
+) -> "tuple[str, list[Diagnostic]]":
+    """废除一条现行事实：移出现行段，追加到已失效段。事实不存在时报错、不落盘。"""
+    diagnostics: "list[Diagnostic]" = []
+    lines = text.splitlines()
+    link = f"[{source_label}]({source_link})"
+
+    sec_start, sec_end = find_section(lines, CURRENT_FACTS_TITLES)
+    blocks = parse_rule_blocks(lines, sec_start, sec_end, FACT_HEADING_RE) if sec_start != -1 else {}
+    if name not in blocks:
+        candidates = difflib.get_close_matches(name, list(blocks.keys()), n=3, cutoff=0.3)
+        hint = f"；现有事实：{'、'.join(blocks.keys()) or '（无）'}"
+        if candidates:
+            hint += f"；最相近候选：{'、'.join(candidates)}"
+        diagnostics.append(
+            Diagnostic(
+                severity="error",
+                code="fact_not_found",
+                message=f"事实「{name}」不存在{hint}",
+                target=name,
+                fix="核对事实名（稳定 key 不随值变化）；若只是值变了，用 --confirmed-fact 覆盖即可",
+            )
+        )
+        return text, diagnostics
+
+    block_start, block_end = blocks[name]
+    retired_line = (
+        f"- ~~{name}~~: retired {date} by {link}"
+        if en
+        else f"- ~~{name}~~：{date} 由 {link} 废除"
+    )
+    del lines[block_start:block_end]
+    ret_start, ret_end = find_section(lines, RETIRED_FACTS_TITLES)
+    if ret_start == -1:
+        cur_start, cur_end = find_section(lines, CURRENT_FACTS_TITLES)
+        insert_at = cur_end if cur_start != -1 else len(lines)
+        lines[insert_at:insert_at] = ["", RETIRED_FACTS_TITLES[1 if en else 0], "", retired_line]
     else:
         body = [
             line for line in lines[ret_start + 1 : ret_end]
@@ -2445,9 +2731,65 @@ def plan_project(project: Path, args: argparse.Namespace) -> int:
 def conversation_project(project: Path, args: argparse.Namespace) -> int:
     config = load_config(project)
     layout = resolve_layout(project, config)
+    en = is_en(config)
+    fmt = getattr(args, "format", "text")
+    confirmed = list(args.confirmed_fact or [])
+    retired = list(args.retire_fact or [])
+
+    # 先验证：入参格式错误必须在任何落盘之前失败（与 B4 同纪律）
+    parsed: "list[tuple[str, str]]" = []
+    for raw in confirmed:
+        pair = parse_confirmed_fact(raw)
+        if pair is None:
+            diag = Diagnostic(
+                severity="error",
+                code="invalid_fact_format",
+                message=f"--confirmed-fact 需要 `名称=值` 格式，收到：{raw}",
+                target=raw,
+                fix='例：--confirmed-fact "设计单提交审核入口=POST /liangang/workorder/submitReview"',
+            )
+            return emit_envelope("conversation", [diag], fmt=fmt)
+        parsed.append(pair)
+
+    conversation_path = next_record_path(layout.conversation_dir, args.title)
+    facts_path = layout.context_dir / PROJECT_FACTS_FILE
+    # 事实来源指向本次对话记录（相对 project-facts.md 所在目录）
+    source_link = f"../{config.conversation_dir}/{conversation_path.name}"
+
+    # 先合并：全部事实在内存中完成，任一失败则整体失败，连对话记录都不写
+    merged_facts_text = None
+    actions: "list[str]" = []
+    if parsed or retired:
+        merged_facts_text = read_text(facts_path) or project_facts_template(config)
+        for name, value in parsed:
+            merged_facts_text, diags, action = merge_project_fact(
+                merged_facts_text,
+                name=name,
+                value=value,
+                kind=args.fact_kind,
+                source_label=conversation_path.name,
+                source_link=source_link,
+                date=today(),
+                en=en,
+            )
+            if any(d.severity == "error" for d in diags):
+                return emit_envelope("conversation", diags, fmt=fmt)
+            actions.append(f"{action} {name}")
+        for name in retired:
+            merged_facts_text, diags = retire_project_fact(
+                merged_facts_text,
+                name=name,
+                source_label=conversation_path.name,
+                source_link=source_link,
+                date=today(),
+                en=en,
+            )
+            if any(d.severity == "error" for d in diags):
+                return emit_envelope("conversation", diags, fmt=fmt)
+            actions.append(f"retired {name}")
+
     ensure_dir(layout.conversation_dir)
     write_if_missing(layout.conversation_dir / "CONVERSATION-INDEX.md", conversation_index_template(config))
-    conversation_path = next_record_path(layout.conversation_dir, args.title)
     write_text(conversation_path, conversation_record_content(config, args))
     update_conversation_index(layout.conversation_dir / "CONVERSATION-INDEX.md", args, conversation_path)
     update_memory_map(
@@ -2458,9 +2800,42 @@ def conversation_project(project: Path, args: argparse.Namespace) -> int:
         domain=args.domain,
         keywords=collect_keywords(args.title, args.summary, extra=args.term + args.preference + args.rejected),
         record_path=conversation_path,
-        description="用户业务解释和偏好，非当前业务事实" if not is_en(config) else "User explanation, not current truth",
+        description="用户业务解释和偏好，非当前业务事实" if not en else "User explanation, not current truth",
     )
-    print(f"created {conversation_path.relative_to(project)}")
+
+    created = [str(conversation_path.relative_to(project))]
+    if merged_facts_text is not None:
+        ensure_dir(facts_path.parent)
+        write_text(facts_path, merged_facts_text)
+        created.append(str(facts_path.relative_to(project)))
+        # 事实名与值本身就是最好的触发词，优先入 keywords 以提升后续路由命中
+        upsert_memory_map_row(
+            layout,
+            config,
+            record_type="fact",
+            status="current",
+            domain=args.domain,
+            keywords=collect_keywords(
+                *[f"{name} {value}" for name, value in parsed],
+                args.fact_kind,
+                extra=["事实", "入口", "配置", "约定"] if not en else ["fact", "entry", "config", "convention"],
+            ),
+            record_path=facts_path,
+            description="用户确认的项目事实登记" if not en else "User-confirmed project facts",
+        )
+
+    # 事实写入真相层后自动跑链接校验（与 maintain full 档同纪律）
+    diagnostics = link_error_diagnostics(project, layout) if merged_facts_text is not None else []
+    if fmt == "json":
+        return emit_envelope(
+            "conversation", diagnostics, fmt="json", payload={"created": created, "facts": actions}
+        )
+    for path in created:
+        print(f"created {path}")
+    for action in actions:
+        print(f"fact: {action}")
+    if diagnostics:
+        return emit_envelope("conversation", diagnostics, fmt="text")
     return EXIT_OK
 
 
@@ -2544,7 +2919,7 @@ def tokenize_for_scoring(text: str) -> "list[str]":
     return tokens
 
 
-TYPE_BONUS = {"context": 1.5, "conversation": 0.5, "plan": 0.5}
+TYPE_BONUS = {"context": 1.5, "fact": 1.5, "conversation": 0.5, "plan": 0.5}
 
 
 def score_memory_rows(
@@ -3299,6 +3674,7 @@ def generate_exported_templates() -> "dict[str, str]":
         "templates/fengwang/memory-map.md": GENERATED_HEADER_MD + memory_map_template(config, date),
         "templates/context/CONTEXT-INDEX.md": GENERATED_HEADER_MD + context_index_template(config, date),
         "templates/context/domain.md": GENERATED_HEADER_MD + domain_template(config, "<领域>", date),
+        "templates/context/project-facts.md": GENERATED_HEADER_MD + project_facts_template(config, date),
         "templates/context/impact-matrix.md": GENERATED_HEADER_MD + impact_matrix_template(config),
         "templates/context/debt-registry.md": GENERATED_HEADER_MD + debt_registry_template(config),
         "templates/task-records/TASK-INDEX.md": GENERATED_HEADER_MD + task_index_template(config, date),
@@ -3411,6 +3787,26 @@ def build_parser() -> argparse.ArgumentParser:
     conversation.add_argument("--unverified", action="append", default=[])
     conversation.add_argument("--related", action="append")
     conversation.add_argument("--promote", default="no", choices=["no", "candidate", "confirmed"])
+    conversation.add_argument(
+        "--confirmed-fact",
+        action="append",
+        default=[],
+        metavar="名称=值",
+        help="登记用户确凿断言的项目事实（可重复）；同名事实覆盖旧值，旧来源转入沿革",
+    )
+    conversation.add_argument(
+        "--fact-kind",
+        default=DEFAULT_FACT_KIND,
+        help="本次事实的类别标签（自由文本，如 entry-point/config/term-anchor/convention）",
+    )
+    conversation.add_argument(
+        "--retire-fact",
+        action="append",
+        default=[],
+        metavar="名称",
+        help="废除一条已失效的现行事实（可重复）",
+    )
+    add_format_argument(conversation)
     conversation.set_defaults(func=conversation_project)
 
     fengwang = subparsers.add_parser("fengwang", help="Route a user request to relevant memory files.")

@@ -7,6 +7,7 @@ Choose one mode per situation:
 - **FengWang routing**: a new user request arrives in a project that has FengChao memory.
 - **Plan capture**: Plan mode or proposal work produced a final plan.
 - **Conversation capture**: the user explained durable business context, terminology, preferences, constraints, or rejected options.
+- **Fact registration**: the user asserted a project fact with certainty — an entry point, a config value, a term anchor, a code convention. Rides on conversation capture via `--confirmed-fact`.
 - **Development completion**: a real development task produced delivered project changes.
 
 Only development completion writes `task-records/` and `changelog/`.
@@ -16,6 +17,7 @@ Only development completion writes `task-records/` and `changelog/`.
 - Plan capture writes `plan-records/` and updates `memory-map.md`.
 - Conversation capture writes `conversation-records/` and updates `memory-map.md`.
 - Neither mode writes `business-context/` unless the user explicitly confirms the information is current business truth.
+- Fact registration is exactly that exception: `--confirmed-fact` writes `business-context/project-facts.md`, because the user asserting a fact **is** the explicit confirmation. It stays gated on `extraction-quality.md` section 5 (strict by default) and on asking the user before writing. Facts merge validate-first: a bad `--confirmed-fact` format or an unknown `--retire-fact` name fails the whole command with no partial writes, not even the conversation record.
 
 ## Development Completion: Two Tiers (lite / full)
 

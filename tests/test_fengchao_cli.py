@@ -384,6 +384,154 @@ class DeltaMergeTests(unittest.TestCase):
             run_cli(project, "check")
 
 
+class ConfirmedFactTests(unittest.TestCase):
+    """F-007 验收：确凿事实登记与红线 9 同构——一个事实名只有一条现行值。"""
+
+    @staticmethod
+    def facts_doc(project):
+        return (project / "fengchao" / "business-context" / "project-facts.md").read_text()
+
+    def test_register_overwrite_keeps_single_active_entry_with_history(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+            run_cli(project, "init", "--project-name", "Demo", "--memory-only")
+            run_cli(
+                project, "conversation",
+                "--title", "审核链路澄清", "--domain", "workorder",
+                "--summary", "用户澄清设计单提交审核的入口。",
+                "--confirmed-fact", "设计单提交审核入口=POST /liangang/workorder/submitReview",
+                "--fact-kind", "entry-point",
+            )
+            run_cli(
+                project, "conversation",
+                "--title", "接口迁移", "--domain", "workorder",
+                "--summary", "用户说明接口已迁移到 v2。",
+                "--confirmed-fact", "设计单提交审核入口=POST /liangang/workorder/v2/submitReview",
+            )
+            doc = self.facts_doc(project)
+            self.assertEqual(1, doc.count("### 事实：设计单提交审核入口"))
+            self.assertIn("v2/submitReview", doc)
+            self.assertNotIn("- **事实**：POST /liangang/workorder/submitReview", doc)
+            # 未显式给 --fact-kind 时沿用旧类别，不被洗成 general
+            self.assertIn("- **类别**：entry-point", doc)
+            # 保链不保文：旧来源转入沿革
+            history = next(line for line in doc.splitlines() if line.startswith("- **沿革**"))
+            self.assertIn("审核链路澄清", history)
+            run_cli(project, "check")
+
+    def test_retire_moves_fact_to_retired_section(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+            run_cli(project, "init", "--project-name", "Demo", "--memory-only")
+            run_cli(
+                project, "conversation",
+                "--title", "登记入口", "--summary", "s",
+                "--confirmed-fact", "旧审核入口=POST /old/submitReview",
+            )
+            run_cli(
+                project, "conversation",
+                "--title", "入口下线", "--summary", "该入口已下线。",
+                "--retire-fact", "旧审核入口",
+            )
+            doc = self.facts_doc(project)
+            self.assertNotIn("### 事实：旧审核入口", doc)
+            self.assertIn("~~旧审核入口~~", doc)
+            run_cli(project, "check")
+
+    def test_invalid_fact_fails_whole_without_partial_writes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+            run_cli(project, "init", "--project-name", "Demo", "--memory-only")
+            conv_dir = project / "fengchao" / "conversation-records"
+            before = sorted(conv_dir.glob("20*_*.md"))
+
+            # 缺 `=` → invalid_fact_format
+            result = run_cli(
+                project, "conversation",
+                "--title", "非法", "--summary", "s",
+                "--confirmed-fact", "没有等号",
+                "--format", "json",
+                check=False,
+            )
+            self.assertEqual(1, result.returncode)
+            payload = json.loads(result.stdout)
+            self.assertEqual("invalid_fact_format", payload["diagnostics"][0]["code"])
+
+            # 废除不存在的事实 → fact_not_found
+            result = run_cli(
+                project, "conversation",
+                "--title", "废除不存在", "--summary", "s",
+                "--retire-fact", "根本没有这条",
+                check=False,
+            )
+            self.assertEqual(1, result.returncode)
+            self.assertIn("fact_not_found", result.stderr)
+
+            # 先验证后写入：失败时连对话记录都不留
+            self.assertEqual(before, sorted(conv_dir.glob("20*_*.md")))
+            run_cli(project, "check")
+
+    def test_memory_map_row_is_idempotent_and_routes_by_anchor(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+            run_cli(project, "init", "--project-name", "Demo", "--memory-only")
+            for idx in range(3):
+                run_cli(
+                    project, "conversation",
+                    "--title", f"事实{idx}", "--domain", "workorder", "--summary", "s",
+                    "--confirmed-fact", f"事实{idx}=值{idx}",
+                )
+            memory_map = (project / "fengchao" / "memory-map.md").read_text()
+            # 受管文件反复写入不得在 memory-map 长出多行
+            self.assertEqual(1, memory_map.count("(business-context/project-facts.md)"))
+
+            # 贴接口 URL 能把事实登记表路由到第一位
+            run_cli(
+                project, "conversation",
+                "--title", "入口", "--domain", "workorder", "--summary", "s",
+                "--confirmed-fact", "设计单提交审核入口=POST /liangang/workorder/submitReview",
+            )
+            result = run_cli(
+                project, "fengwang",
+                "--query", "http://1.15.77.161:8089/liangang/workorder/submitReview 这个接口是干嘛的",
+            )
+            self.assertIn("project-facts.md", result.stdout.splitlines()[1])
+
+    def test_conversation_without_facts_leaves_registry_untouched(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+            run_cli(project, "init", "--project-name", "Demo", "--memory-only")
+            facts = project / "fengchao" / "business-context" / "project-facts.md"
+            before = facts.read_bytes()
+            run_cli(
+                project, "conversation",
+                "--title", "普通对话记录", "--summary", "用户解释了业务背景。",
+                "--term", "主管=一审岗位",
+            )
+            self.assertEqual(before, facts.read_bytes())
+
+    def test_merge_project_fact_is_pure_and_auto_detects_action(self):
+        config = fengchao.ProjectConfig(project_name="Demo")
+        base = fengchao.project_facts_template(config, "2026-08-23")
+        text, diags, action = fengchao.merge_project_fact(
+            base, name="审核超时", value="30 秒", kind="config",
+            source_label="rec.md", source_link="../conversation-records/rec.md",
+            date="2026-08-23",
+        )
+        self.assertEqual("added", action)
+        self.assertEqual([], diags)
+        text2, _, action2 = fengchao.merge_project_fact(
+            text, name="审核超时", value="60 秒", kind="config",
+            source_label="rec2.md", source_link="../conversation-records/rec2.md",
+            date="2026-08-24",
+        )
+        self.assertEqual("updated", action2)
+        self.assertEqual(1, text2.count("### 事实：审核超时"))
+        self.assertIn("60 秒", text2)
+        # 纯函数不改入参
+        self.assertIn("30 秒", text)
+
+
 class CheckContractTests(unittest.TestCase):
     def test_check_reports_broken_link_with_json_envelope(self):
         with tempfile.TemporaryDirectory() as tmp:
